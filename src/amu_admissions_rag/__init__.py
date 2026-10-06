@@ -4,6 +4,7 @@ from .config import AppPaths
 from .models import (
     BoundingBox,
     CourseField,
+    CourseCorpus,
     CourseRecord,
     CourseTable,
     CourseTableCell,
@@ -23,6 +24,7 @@ __all__ = [
     "AppPaths",
     "BoundingBox",
     "CourseField",
+    "CourseCorpus",
     "CourseRecord",
     "CourseTable",
     "CourseTableCell",
@@ -38,4 +40,3 @@ __all__ = [
     "SourceReference",
 ]
 __version__ = "0.1.0"
-

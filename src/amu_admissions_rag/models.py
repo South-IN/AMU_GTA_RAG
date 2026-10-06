@@ -145,3 +145,8 @@ class ExtractedDocument(BaseModel):
     document: DocumentRecord
     pages: list[ExtractedPage]
 
+
+class CourseCorpus(BaseModel):
+    document: DocumentRecord
+    courses: list[CourseRecord]
+

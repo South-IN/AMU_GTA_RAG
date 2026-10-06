@@ -71,3 +71,31 @@
 - Smoke tests cover the PDF cover, an undergraduate course page and a landscape appendix
 - Tests verify the 187-page count, document fingerprint, page labels and detected tables
 - CLI smoke extraction produced valid JSON for physical pages 54 and 128
+
+## Phase 4: Course Structure Parsing
+
+**Status:** Complete
+**Date:** 2026-10-06
+
+### Changes
+
+- Added course-card segmentation from repeated Course of Study anchors
+- Added normalized field extraction for eligibility, age, selection and test information
+- Added course-detail table normalization for branches, specializations and campuses
+- Added forward-fill handling for visually merged duration and intake cells
+- Added programme-level, faculty-context and source-page assignment
+- Added a CLI that writes pending course records for human validation
+
+### Decisions
+
+- Keep parent courses with multiple branches or specializations as one record with table rows
+- Preserve inherited table values and mark them as inherited
+- Leave every parsed record in pending review state
+- Carry faculty context across sequential pages and allow an explicit starting faculty
+
+### Validation
+
+- Tests cover standard course cards, multiple courses on one page and specialization tables
+- Tests verify course codes, fields, faculty context and merged-cell inheritance
+- Undergraduate smoke parsing produced 31 pending records with no unresolved faculty values
+- All 31 undergraduate records retained at least one normalized course-detail table

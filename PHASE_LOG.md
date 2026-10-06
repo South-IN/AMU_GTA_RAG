@@ -45,3 +45,29 @@
 ### Validation
 
 - Model tests cover provenance, review-state requirements and invalid coordinates
+
+## Phase 3: PDF Extraction
+
+**Status:** Complete
+**Date:** 2026-10-06
+
+### Changes
+
+- Added PDF metadata and SHA-256 fingerprint extraction
+- Added positioned text-line extraction with bounding boxes and font metadata
+- Added printed-page-label detection
+- Added table extraction with bounding boxes and normalized cell text
+- Added a CLI for extracting selected physical pages to JSON
+
+### Decisions
+
+- Use pdfplumber for positioned text and tables
+- Use pypdf for document metadata and page count
+- Keep raw extraction separate from later course normalization
+- Select physical pages explicitly so extraction can run incrementally
+
+### Validation
+
+- Smoke tests cover the PDF cover, an undergraduate course page and a landscape appendix
+- Tests verify the 187-page count, document fingerprint, page labels and detected tables
+- CLI smoke extraction produced valid JSON for physical pages 54 and 128

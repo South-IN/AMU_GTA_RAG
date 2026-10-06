@@ -117,3 +117,31 @@ class SectionRecord(BaseModel):
     source: SourceReference
     review: ReviewMetadata = Field(default_factory=ReviewMetadata)
 
+
+class ExtractedTextLine(BaseModel):
+    text: NonEmptyText
+    bounding_box: BoundingBox
+    font_names: list[str] = Field(default_factory=list)
+    max_font_size: float | None = None
+
+
+class ExtractedTable(BaseModel):
+    table_index: int = Field(ge=1)
+    bounding_box: BoundingBox
+    rows: list[list[str | None]]
+
+
+class ExtractedPage(BaseModel):
+    physical_page: int = Field(ge=1)
+    printed_page: str | None = None
+    width: float = Field(gt=0)
+    height: float = Field(gt=0)
+    text: str
+    lines: list[ExtractedTextLine]
+    tables: list[ExtractedTable]
+
+
+class ExtractedDocument(BaseModel):
+    document: DocumentRecord
+    pages: list[ExtractedPage]
+

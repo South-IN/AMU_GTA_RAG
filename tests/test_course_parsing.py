@@ -19,6 +19,15 @@ class CourseParserTests(unittest.TestCase):
         cls.narrative_mentions = CourseParser().parse(
             extractor.extract_pages([21, 34, 186])
         )
+        cls.undergraduate_span = CourseParser().parse(
+            extractor.extract_pages([54, 55, 56])
+        )
+        cls.section_boundary = CourseParser().parse(
+            extractor.extract_pages([116, 117])
+        )
+        cls.noncontiguous = CourseParser().parse(
+            extractor.extract_pages([54, 80])
+        )
 
     def test_standard_course_card(self) -> None:
         agriculture = self.undergraduate.courses[0]
@@ -62,6 +71,72 @@ class CourseParserTests(unittest.TestCase):
 
     def test_narrative_course_of_study_mentions_are_rejected(self) -> None:
         self.assertEqual(self.narrative_mentions.courses, [])
+
+    def test_unlabelled_field_continuation_is_attached_to_previous_course(self) -> None:
+        community_science = next(
+            course
+            for course in self.undergraduate_span.courses
+            if "Community Science" in course.course_name
+        )
+        additional = next(
+            field
+            for field in community_science.fields
+            if field.name == "additional_information"
+        )
+
+        self.assertIn("Only those candidates", additional.value)
+        self.assertIn("eligible for Counseling and Admission", additional.value)
+        self.assertNotIn("Information Admission Test", additional.value)
+
+    def test_cross_page_course_adds_continued_and_new_fields(self) -> None:
+        arts_courses = [
+            course
+            for course in self.undergraduate_span.courses
+            if course.source.physical_page == 55
+            and course.course_name == "B.A. (Hons.)"
+        ]
+        english_course = next(
+            course
+            for course in arts_courses
+            if any(
+                row.get("major_subject")
+                and row["major_subject"].text == "English"
+                for table in course.tables
+                for row in table.rows
+            )
+        )
+        fields = {field.name: field.value for field in english_course.fields}
+
+        self.assertIn("Bridge Course-Senior Secondary", fields["qualifying_examination"])
+        self.assertNotIn("Examination 50%", fields["qualifying_examination"])
+        self.assertIn("age_limit", fields)
+        self.assertIn("selection_process", fields)
+        self.assertIn("test_paper_details", fields)
+        self.assertIn("test_centres", fields)
+        self.assertIn("additional_information", fields)
+        self.assertIn("Faculties of Arts and Social Sciences", fields["additional_information"])
+        self.assertNotIn("Faculties of Information Arts", fields["additional_information"])
+
+    def test_large_next_section_heading_stops_continuation(self) -> None:
+        bridge_course = next(
+            course
+            for course in self.section_boundary.courses
+            if course.course_name.startswith("Bridge Course")
+        )
+        field_text = " ".join(field.value for field in bridge_course.fields)
+
+        self.assertNotIn("Centre of Professional Courses", field_text)
+        self.assertNotIn("Self Finance Mode", field_text)
+
+    def test_nonconsecutive_pages_are_not_merged(self) -> None:
+        community_science = next(
+            course
+            for course in self.noncontiguous.courses
+            if "Community Science" in course.course_name
+        )
+        field_text = " ".join(field.value for field in community_science.fields)
+
+        self.assertNotIn("GATE in Chemical Engineering", field_text)
 
 
 if __name__ == "__main__":

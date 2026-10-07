@@ -35,9 +35,21 @@ FIELD_PATTERNS: tuple[tuple[str, re.Pattern[str]], ...] = (
         re.compile(r"^Qualifying(?:\s+Examination)?\b\s*:?", re.IGNORECASE),
     ),
     ("age_limit", re.compile(r"^Age Limit\b\s*:?", re.IGNORECASE)),
-    ("selection_process", re.compile(r"^Selection Process\b\s*:?", re.IGNORECASE)),
-    ("test_paper_details", re.compile(r"^Test Paper Details\b\s*:?", re.IGNORECASE)),
-    ("test_centres", re.compile(r"^Test Centre\(s\)\b\s*:?", re.IGNORECASE)),
+    (
+        "selection_process",
+        re.compile(r"^Selection(?:\s+Process)?\b\s*:?", re.IGNORECASE),
+    ),
+    (
+        "test_paper_details",
+        re.compile(
+            r"^(?:Test Paper(?:\s+Details)?|Test Details)\b\s*:?",
+            re.IGNORECASE,
+        ),
+    ),
+    (
+        "test_centres",
+        re.compile(r"^Test Centre(?:\(s\)|s)?\s*:?", re.IGNORECASE),
+    ),
     (
         "additional_information",
         re.compile(r"^Additional(?:\s+Information)?\b\s*:?", re.IGNORECASE),
@@ -55,6 +67,13 @@ FIELD_LABELS = {
     "additional_information": "Additional Information",
     "specialization": "Specialization",
     "remarks": "Remarks",
+}
+
+SPLIT_FIELD_LABELS = {
+    "qualifying_examination": re.compile(r"^Examination\b\s*:?", re.IGNORECASE),
+    "selection_process": re.compile(r"^Process\b\s*:?", re.IGNORECASE),
+    "test_paper_details": re.compile(r"^Details\b\s*:?", re.IGNORECASE),
+    "additional_information": re.compile(r"^Information\b\s*:?", re.IGNORECASE),
 }
 
 HEADER_ALIASES = {
@@ -101,16 +120,132 @@ class CourseParser:
     ) -> CourseCorpus:
         courses: list[CourseRecord] = []
         current_faculty = initial_faculty
+        previous_physical_page: int | None = None
 
         for page in sorted(extracted.pages, key=lambda item: item.physical_page):
+            if (
+                courses
+                and previous_physical_page is not None
+                and page.physical_page == previous_physical_page + 1
+            ):
+                courses[-1] = self._extend_previous_course(
+                    extracted.document.document_id,
+                    page,
+                    courses[-1],
+                )
             page_courses, current_faculty = self._parse_page(
                 extracted.document.document_id,
                 page,
                 current_faculty,
             )
             courses.extend(page_courses)
+            previous_physical_page = page.physical_page
 
         return CourseCorpus(document=extracted.document, courses=courses)
+
+    def _extend_previous_course(
+        self,
+        document_id: str,
+        page: ExtractedPage,
+        course: CourseRecord,
+    ) -> CourseRecord:
+        """Attach a leading cross-page fragment to the preceding course card."""
+
+        end_top = self._leading_continuation_end(page)
+        fragment_lines = [
+            line
+            for line in page.lines
+            if line.bounding_box.top < end_top and not self._is_noise(line.text)
+        ]
+        if not self._is_course_continuation(page, course, fragment_lines):
+            return course
+
+        initial_field_name = course.fields[-1].name if course.fields else None
+        continuation_fields = self._extract_fields(
+            document_id=document_id,
+            page=page,
+            start_top=0,
+            end_top=end_top,
+            initial_field_name=initial_field_name,
+            source_printed_page=course.source.printed_page,
+            source_section=course.faculty,
+        )
+        if not continuation_fields:
+            return course
+
+        merged_fields = list(course.fields)
+        for continuation in continuation_fields:
+            existing_index = next(
+                (
+                    index
+                    for index, existing in enumerate(merged_fields)
+                    if existing.name == continuation.name
+                ),
+                None,
+            )
+            if existing_index is None:
+                merged_fields.append(continuation)
+                continue
+
+            existing = merged_fields[existing_index]
+            source = existing.source
+            if source.physical_page != continuation.source.physical_page:
+                source = source.model_copy(update={"bounding_box": None})
+            merged_fields[existing_index] = existing.model_copy(
+                update={
+                    "value": self._clean_text(
+                        f"{existing.value} {continuation.value}"
+                    ),
+                    "source": source,
+                }
+            )
+
+        return course.model_copy(update={"fields": merged_fields})
+
+    def _leading_continuation_end(self, page: ExtractedPage) -> float:
+        boundaries: list[float] = []
+        for line in page.lines:
+            text = line.text.strip()
+            if self._is_noise(text):
+                continue
+            if (
+                re.match(r"^Course of Study\b", text, re.IGNORECASE)
+                or re.match(r"^Course Details\b", text, re.IGNORECASE)
+                or text.lower().startswith("faculty of ")
+                or text.upper().endswith("PROGRAMMES")
+                or (line.max_font_size is not None and line.max_font_size >= 13)
+            ):
+                boundaries.append(line.bounding_box.top)
+        return min(boundaries, default=page.height)
+
+    def _is_course_continuation(
+        self,
+        page: ExtractedPage,
+        course: CourseRecord,
+        lines: list[ExtractedTextLine],
+    ) -> bool:
+        if not lines:
+            return False
+
+        has_field_label = any(
+            field_name in FIELD_LABELS and pattern.match(line.text.strip())
+            for line in lines
+            for field_name, pattern in FIELD_PATTERNS
+        )
+        if has_field_label:
+            return True
+
+        if not course.fields:
+            return False
+        first_line = min(lines, key=lambda item: item.bounding_box.top)
+        return (
+            first_line.bounding_box.top <= 90
+            and first_line.bounding_box.x0 >= page.width * 0.15
+            and (
+                first_line.max_font_size is None
+                or first_line.max_font_size <= 11
+            )
+        )
 
     def _parse_page(
         self,
@@ -275,6 +410,9 @@ class CourseParser:
         page: ExtractedPage,
         start_top: float,
         end_top: float,
+        initial_field_name: str | None = None,
+        source_printed_page: str | None = None,
+        source_section: str | None = None,
     ) -> list[CourseField]:
         lines = [
             line
@@ -282,7 +420,9 @@ class CourseParser:
             if start_top <= line.bounding_box.top < end_top and not self._is_noise(line.text)
         ]
         collected: dict[str, list[ExtractedTextLine]] = {}
-        current_name: str | None = None
+        current_name = initial_field_name
+        if current_name is not None:
+            collected[current_name] = []
 
         for line in lines:
             matched_name: str | None = None
@@ -302,7 +442,13 @@ class CourseParser:
                         self._line_with_text(line, remainder)
                     )
             elif current_name:
-                collected[current_name].append(line)
+                cleaned_line = self._remove_split_field_label(
+                    current_name,
+                    line,
+                    page.width,
+                )
+                if cleaned_line is not None:
+                    collected[current_name].append(cleaned_line)
 
         fields: list[CourseField] = []
         for name, field_lines in collected.items():
@@ -320,7 +466,8 @@ class CourseParser:
                     source=SourceReference(
                         document_id=document_id,
                         physical_page=page.physical_page,
-                        printed_page=page.printed_page,
+                        printed_page=source_printed_page or page.printed_page,
+                        section=source_section,
                         bounding_box=box,
                     ),
                 )
@@ -495,7 +642,12 @@ class CourseParser:
         text = value.strip()
         lowered = text.lower()
         return (
-            lowered in {"aligarh muslim university", "guide to admissions 2026-27"}
+            lowered
+            in {
+                "aligarh muslim university",
+                "guide to admissions 2026-27",
+                "aligarh muslim university guide to admissions 2026-27",
+            }
             or lowered.startswith("faculty of ")
             or lowered.endswith(" programmes")
             or bool(re.fullmatch(r"[A-K]\.\d+", text, re.IGNORECASE))
@@ -504,6 +656,21 @@ class CourseParser:
     @staticmethod
     def _line_with_text(line: ExtractedTextLine, text: str) -> ExtractedTextLine:
         return line.model_copy(update={"text": text})
+
+    @classmethod
+    def _remove_split_field_label(
+        cls,
+        field_name: str,
+        line: ExtractedTextLine,
+        page_width: float,
+    ) -> ExtractedTextLine | None:
+        pattern = SPLIT_FIELD_LABELS.get(field_name)
+        if pattern is None or line.bounding_box.x0 > page_width * 0.12:
+            return line
+        text = pattern.sub("", line.text.strip(), count=1).strip(" :")
+        if not text:
+            return None
+        return cls._line_with_text(line, text)
 
     @staticmethod
     def _union_boxes(boxes: list[BoundingBox]) -> BoundingBox:

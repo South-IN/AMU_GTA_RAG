@@ -87,6 +87,9 @@
 - Added a CLI that writes pending course records for human validation
 - Rejected narrative uses of "Course of Study" when they produce neither course fields nor a normalized course table
 - Added a metadata-light JSON export for human reviewers that preserves content, tables, review state and page references
+- Added bounded cross-page continuation parsing for course cards that spill onto the next physical page
+- Normalized split visual labels such as Qualifying/Examination and Additional/Information
+- Corrected Test Centre(s) field recognition so it is not absorbed into test-paper details
 
 ### Decisions
 
@@ -106,3 +109,6 @@
 - The final pending corpus contains 180 normalized course tables, 372 table rows and no unresolved faculties or duplicate record IDs
 - Regression coverage rejects three narrative false positives found during the first full-document run
 - Reviewer-export tests verify that technical IDs, hashes and bounding boxes are removed without losing reviewable values
+- Cross-page regression tests recover the Community Science third note and the B.A. (Hons.) English eligibility continuation
+- Boundary tests prevent new sections and non-consecutive page selections from being merged into preceding courses
+- Full-corpus comparison retained all 179 record IDs, 180 tables and 372 table rows with no non-field changes

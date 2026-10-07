@@ -53,6 +53,8 @@ Extract and preserve:
 - Policy chunks split at headings and numbered rules
 - One structured record per appendix table row
 
+Course child chunks are self-contained: every chunk repeats the canonical course name, course code, faculty, programme level and field/table label. Each child also stores its course record ID for relational parent hydration after retrieval; this is not graph retrieval.
+
 ### Human validation
 
 - Review extracted fields against the original PDF page

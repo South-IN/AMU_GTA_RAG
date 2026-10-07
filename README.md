@@ -24,5 +24,14 @@ $env:PYTHONPATH = "src"
 & $python -m amu_admissions_rag.policy_cli
 ```
 
+Build an approval-gated retrieval corpus:
+
+```powershell
+$env:PYTHONPATH = "src"
+& $python -m amu_admissions_rag.index_cli
+```
+
+Use `--include-pending` only for a local chunk preview. PostgreSQL loading requires approved records and `AMU_RAG_DATABASE_URL`; see [docs/RETRIEVAL_INDEX.md](docs/RETRIEVAL_INDEX.md).
+
 See [PROJECT_PLAN.md](PROJECT_PLAN.md) for the full architecture and
 [PHASE_LOG.md](PHASE_LOG.md) for implementation history.

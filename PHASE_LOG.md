@@ -147,3 +147,40 @@
 - Repeated guide headers do not appear in policy chunk text
 - Regression tests cover merged application values, NEET application methods, deferred dates, multi-paper schedules, inherited schedules, fees and extraction spacing artifacts
 - The complete test suite passes 32 tests
+
+## Phase 6: Retrieval Chunks and PostgreSQL Index Foundation
+
+**Status:** Complete
+**Date:** 2026-10-07
+
+### Changes
+
+- Added self-contained course overview, field and table-row chunk generation
+- Added `parent_record_id` links for relational course hydration
+- Added independently searchable policy-section and appendix-row chunks
+- Added approval-gated index generation with a separate pending preview mode
+- Added PostgreSQL tables for documents, source records and retrieval chunks
+- Added generated full-text vectors, GIN indexes and pgvector storage
+- Added Reciprocal Rank Fusion for combined full-text and vector ranking
+- Added an atomic PostgreSQL loader scoped to one guide document
+- Added retrieval-index architecture and operating documentation
+
+### Decisions
+
+- Repeat canonical course context inside every child chunk so retrieval does not depend on loading the parent first
+- Use the parent relationship only after retrieval for course hydration and sibling-field access
+- Keep policy chunks and appendix rows independent rather than forcing artificial course relationships
+- Permit only approved records in the database retrieval table
+- Keep pgvector dimension-agnostic until the embedding provider is finalized
+- Use exact vector scans for the MVP-sized corpus and defer HNSW until dimensions are fixed
+- Defer graph retrieval until multi-hop evaluation demonstrates measurable benefit
+
+### Validation
+
+- The full pending preview contains 2,960 unique chunks
+- Preview composition is 179 course overviews, 865 course fields, 372 course table rows, 154 policy sections and 1,390 appendix rows
+- All 1,416 course chunks contain course context and a parent record ID
+- The approved-only build contains zero chunks because approval audit fields have not yet been written to the source corpora
+- The empty-corpus guard prevents accidental deletion of an existing database index
+- Tests cover self-contained content, persisted parent links, approval gating, PostgreSQL constraints and RRF structure
+- The complete test suite passes 44 tests

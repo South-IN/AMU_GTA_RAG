@@ -35,6 +35,14 @@ class AppendixType(str, Enum):
     FEE_SUMMARY = "fee_summary"
 
 
+class ChunkType(str, Enum):
+    COURSE_OVERVIEW = "course_overview"
+    COURSE_FIELD = "course_field"
+    COURSE_TABLE_ROW = "course_table_row"
+    POLICY_SECTION = "policy_section"
+    APPENDIX_ROW = "appendix_row"
+
+
 class BoundingBox(BaseModel):
     x0: float = Field(ge=0)
     top: float = Field(ge=0)
@@ -182,3 +190,21 @@ class PolicyCorpus(BaseModel):
     document: DocumentRecord
     sections: list[SectionRecord]
     appendix_rows: list[AppendixRecord]
+
+
+class RetrievalChunk(BaseModel):
+    chunk_id: NonEmptyText
+    document_id: NonEmptyText
+    chunk_type: ChunkType
+    parent_record_id: NonEmptyText
+    title: NonEmptyText
+    text: NonEmptyText
+    source: SourceReference
+    field_name: str | None = None
+    metadata: dict[str, str | int | float | bool | None] = Field(default_factory=dict)
+    review: ReviewMetadata
+
+
+class IndexCorpus(BaseModel):
+    document: DocumentRecord
+    chunks: list[RetrievalChunk]

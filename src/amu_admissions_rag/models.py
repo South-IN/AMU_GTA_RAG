@@ -269,3 +269,20 @@ class QueryAnalysis(BaseModel):
     aliases: list[CourseAliasMatch] = Field(default_factory=list)
     intents: list[QueryIntent] = Field(default_factory=list)
     preferred_fields: list[str] = Field(default_factory=list)
+
+
+class RetrievalHit(BaseModel):
+    chunk: RetrievalChunk
+    fused_score: float = Field(ge=0)
+    lexical_score: float = Field(ge=0)
+    vector_score: float
+    lexical_rank: int | None = Field(default=None, ge=1)
+    vector_rank: int | None = Field(default=None, ge=1)
+    intent_boost: float = Field(default=0, ge=0)
+
+
+class RetrievalResponse(BaseModel):
+    query: QueryAnalysis
+    hits: list[RetrievalHit] = Field(default_factory=list)
+    course_parents: dict[str, CourseRecord] = Field(default_factory=dict)
+    embedding_provider: NonEmptyText

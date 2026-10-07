@@ -89,6 +89,12 @@ class QueryProcessorTests(unittest.TestCase):
         self.assertIn(QueryIntent.DURATION, analysis.intents)
         self.assertEqual(analysis.preferred_fields, ["course_details"])
 
+    def test_degree_needed_is_an_eligibility_intent(self) -> None:
+        analysis = self.processor.analyze("What degree do I need for MSW?")
+
+        self.assertIn(QueryIntent.ELIGIBILITY, analysis.intents)
+        self.assertEqual(analysis.preferred_fields, ["qualifying_examination"])
+
     def test_query_without_known_intent_is_general(self) -> None:
         analysis = self.processor.analyze("Tell me about MBA")
 
@@ -110,6 +116,10 @@ class QueryProcessorTests(unittest.TestCase):
         self.assertEqual(
             course_name_expansions("B.A.LL.B."),
             ["Bachelor of Arts and Bachelor of Laws"],
+        )
+        self.assertEqual(
+            course_name_expansions("Master of Social Work (M.S.W.)"),
+            ["Master of Social Work"],
         )
 
 

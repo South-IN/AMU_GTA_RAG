@@ -98,8 +98,11 @@ This matches `MCA`, `mca`, `M.C.A.`, `M.CA` and `M C A`.
 - PostgreSQL full-text search for exact terms and course names
 - pgvector search for semantic questions
 - Reciprocal Rank Fusion to combine text and vector results
-- Reranking before answer generation
-- True BM25 can be added later if evaluation shows weak keyword recall
+- Intent-aware soft reranking before answer generation
+- Parent-course hydration after child-chunk retrieval
+- Local BM25 for exact-term retrieval; PostgreSQL full-text remains the deployment fallback
+
+The local MVP runner uses BM25 now and a deterministic hashing-vector fallback so the complete workflow is testable without credentials. The embedding interface remains provider-neutral for a later hosted semantic model.
 
 ## Technology Stack
 

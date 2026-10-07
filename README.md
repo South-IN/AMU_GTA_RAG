@@ -51,5 +51,13 @@ Expand course abbreviations while preserving the rest of the query:
 
 See [docs/QUERY_PROCESSING.md](docs/QUERY_PROCESSING.md) for supported behavior and intent routing.
 
+Run hybrid retrieval over the approved corpus:
+
+```powershell
+& $python -m amu_admissions_rag.retrieval_cli "What is the MCA age limit?" --limit 5
+```
+
+The local runner combines BM25, deterministic offline vectors and RRF, then hydrates the reviewed parent course. See [docs/HYBRID_RETRIEVAL.md](docs/HYBRID_RETRIEVAL.md).
+
 See [PROJECT_PLAN.md](PROJECT_PLAN.md) for the full architecture and
 [PHASE_LOG.md](PHASE_LOG.md) for implementation history.

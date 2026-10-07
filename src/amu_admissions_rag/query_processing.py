@@ -66,7 +66,8 @@ INTENT_RULES: tuple[tuple[QueryIntent, re.Pattern[str], tuple[str, ...]], ...] =
         QueryIntent.ELIGIBILITY,
         re.compile(
             r"\b(?:eligible|eligibility|qualif(?:y|ies|ied|ication)|"
-            r"require(?:s|d|ments?)?)\b|\bapply(?:ing)?\s+for\b",
+            r"require(?:s|d|ments?)?)\b|\bapply(?:ing)?\s+for\b|"
+            r"\b(?:what|which)\s+(?:degree|qualification)\b.*\bneed\b",
             re.I,
         ),
         ("qualifying_examination",),
@@ -201,16 +202,18 @@ class QueryProcessor:
 
 
 def course_name_expansions(course_name: str) -> list[str]:
-    """Return the longest leading abbreviation expansion for a course name."""
+    """Return the longest course abbreviation expansion found in a title."""
 
     candidates: list[tuple[int, str]] = []
     for alias in COURSE_ALIASES:
-        match = alias.pattern.match(course_name)
+        match = alias.pattern.search(course_name)
         if match:
-            candidates.append((match.end(), alias.full_name))
+            candidates.append((len(alias.abbreviation), alias.full_name))
     if not candidates:
         return []
-    longest = max(end for end, _ in candidates)
+    longest = max(length for length, _ in candidates)
     return list(
-        dict.fromkeys(full_name for end, full_name in candidates if end == longest)
+        dict.fromkeys(
+            full_name for length, full_name in candidates if length == longest
+        )
     )

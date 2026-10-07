@@ -1,0 +1,82 @@
+[
+  {
+    "query": "Am I eligible for M.C.A.?",
+    "expected_parent_record_id": "amu-guide-2026-27:94:2:master-of-computer-science-and-applications-mca",
+    "expected_field": "qualifying_examination"
+  },
+  {
+    "query": "What is the age limit for MCA?",
+    "expected_parent_record_id": "amu-guide-2026-27:94:2:master-of-computer-science-and-applications-mca",
+    "expected_field": "age_limit"
+  },
+  {
+    "query": "How are MBA candidates selected?",
+    "expected_parent_record_id": "amu-guide-2026-27:90:1:master-of-business-administration-mba",
+    "expected_field": "selection_process"
+  },
+  {
+    "query": "Where is the M.Tech Computer Science entrance test held?",
+    "expected_parent_record_id": "amu-guide-2026-27:80:2:master-of-technology-m-tech-computer-science-engineering",
+    "expected_field": "test_centres"
+  },
+  {
+    "query": "How many B.Tech Computer Engineering seats are there?",
+    "expected_parent_record_id": "amu-guide-2026-27:57:2:bachelor-of-technology-b-tech",
+    "expected_field": "course_details"
+  },
+  {
+    "query": "Eligibility for B.Sc. Hons Agriculture self financing",
+    "expected_parent_record_id": "amu-guide-2026-27:54:1:b-sc-hons-agriculture-under-self-financing-scheme",
+    "expected_field": "qualifying_examination"
+  },
+  {
+    "query": "What age is allowed for B.A. Hons?",
+    "expected_parent_record_id": "amu-guide-2026-27:55:2:b-a-hons",
+    "expected_field": "age_limit"
+  },
+  {
+    "query": "What is the B.Com Hons test pattern?",
+    "expected_parent_record_id": "amu-guide-2026-27:56:2:b-com-hons",
+    "expected_field": "test_paper_details"
+  },
+  {
+    "query": "Can I apply for B.A.LL.B.?",
+    "expected_parent_record_id": "amu-guide-2026-27:61:1:b-a-ll-b",
+    "expected_field": "qualifying_examination"
+  },
+  {
+    "query": "Maximum age for MBBS admission",
+    "expected_parent_record_id": "amu-guide-2026-27:62:1:m-b-b-s",
+    "expected_field": "age_limit"
+  },
+  {
+    "query": "What is the BUMS selection process?",
+    "expected_parent_record_id": "amu-guide-2026-27:69:1:kamil-e-tib-o-jarahat-bums",
+    "expected_field": "selection_process"
+  },
+  {
+    "query": "M.Sc Ag Microbiology exam centre",
+    "expected_parent_record_id": "amu-guide-2026-27:70:1:m-sc-ag-microbiology",
+    "expected_field": "test_centres"
+  },
+  {
+    "query": "What degree do I need for MSW?",
+    "expected_parent_record_id": "amu-guide-2026-27:104:2:master-of-social-work-m-s-w",
+    "expected_field": "qualifying_examination"
+  },
+  {
+    "query": "Seats in Computer Engineering Diploma",
+    "expected_parent_record_id": "amu-guide-2026-27:110:1:diploma-in-engineering",
+    "expected_field": "course_details"
+  },
+  {
+    "query": "What is the age limit for Senior Secondary School Certificate?",
+    "expected_parent_record_id": "amu-guide-2026-27:113:1:senior-secondary-school-certificate",
+    "expected_field": "age_limit"
+  },
+  {
+    "query": "How are Ph.D. applicants selected in Unani Medicine?",
+    "expected_parent_record_id": "amu-guide-2026-27:107:1:ph-d",
+    "expected_field": "selection_process"
+  }
+]

@@ -221,3 +221,38 @@
 - Evaluation follow-up recognizes `apply for` and subject requirements as eligibility, and `how long` as duration
 - The reviewed sample still builds 190 approved retrieval chunks after name enrichment
 - The complete test suite passes 59 tests
+
+## Phase 8: Hybrid Retrieval and Parent Hydration
+
+**Status:** Complete
+**Date:** 2026-10-07
+
+### Changes
+
+- Added a dependency-free BM25 implementation for local lexical retrieval
+- Added a provider-neutral embedding interface and deterministic NumPy hashing-vector fallback
+- Added cosine vector ranking and Reciprocal Rank Fusion across both retrieval paths
+- Added intent-aware soft reranking without filtering alternative evidence
+- Added parent-course hydration for retrieved child chunks
+- Added human-readable and JSON retrieval CLI output with page provenance
+- Added a 16-query evaluation set spanning all 15 approved sample courses
+- Added an evaluation runner that records top-k hits and pass/fail evidence
+
+### Decisions
+
+- Always execute both lexical and vector retrieval for the MVP
+- Use RRF because lexical and vector raw scores are not directly comparable
+- Keep intent preferences as boosts so imperfect classification cannot hide evidence
+- Use the local hashing embedder only for offline pipeline validation, not as a claim of learned semantic quality
+- Keep the embedding provider swappable for a hosted model during refinement
+- Hydrate parents only after ranking; child chunks remain self-contained and citable
+- Search only the 190 chunks derived from the 15 approved course records
+
+### Validation
+
+- The complete test suite passes 64 tests
+- Deterministic vector generation, BM25/RRF ranking, field boosts and parent hydration have regression coverage
+- The approved corpus rebuild still contains 190 chunks
+- The varied retrieval evaluation passes 16/16 cases at top-5
+- The evaluation covers eligibility, age, selection, tests, test centres and intake/table-row queries
+- Every evaluated course in the human-validated sample is represented

@@ -286,3 +286,31 @@
 - Field retrieval remains 16/16 at top-5 and course discovery remains 5/5 at rank 1
 - The complete test suite passes 71 tests
 - Evaluation JSON now records the complete retrieved chunk and source pages for every query
+
+## Phase 9: Grounded Answer Generation
+
+**Status:** Implementation complete; live API validation pending explicit approval to transmit retrieved guide content to Groq
+**Date:** 2026-10-07
+
+### Changes
+
+- Added a Groq Chat Completions client using `openai/gpt-oss-20b`
+- Added local `.env` loading without overriding process-level configuration
+- Added a placeholder `.env.example`; the real API key remains ignored by Git
+- Added a strict source-grounding and abstention prompt
+- Added retrieval-to-answer CLI support for ordinary and multi-course questions
+- Added structured answer output with model, retrieved chunk IDs and source pages
+
+### Decisions
+
+- Send only the user query and retrieved content/citations to the answer model
+- Never send coordinates, retrieval scores or internal metadata
+- Require `[SOURCE N]` citations for factual statements
+- Avoid declaring eligibility when required applicant facts are missing
+- Use low reasoning effort and hidden reasoning for the hackathon MVP
+
+### Validation
+
+- Unit tests verify the selected model, grounded prompt, API payload and offline abstention
+- The complete local test suite passes 74 tests
+- A real Groq call remains pending explicit approval for third-party transmission of the test query and retrieved AMU guide chunk

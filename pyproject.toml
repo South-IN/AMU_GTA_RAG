@@ -26,6 +26,7 @@ amu-load-index = "amu_admissions_rag.load_index_cli:main"
 amu-query = "amu_admissions_rag.query_cli:main"
 amu-retrieve = "amu_admissions_rag.retrieval_cli:main"
 amu-evaluate-retrieval = "amu_admissions_rag.evaluate_retrieval_cli:main"
+amu-answer = "amu_admissions_rag.answer_cli:main"
 amu-export-review = "amu_admissions_rag.review_cli:main"
 
 

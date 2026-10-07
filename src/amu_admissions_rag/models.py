@@ -302,3 +302,19 @@ class CourseDiscoveryResponse(BaseModel):
     query: QueryAnalysis
     candidates: list[CourseCandidate] = Field(default_factory=list)
     embedding_provider: NonEmptyText
+
+
+class AnswerCitation(BaseModel):
+    source_number: int = Field(ge=1)
+    chunk_id: NonEmptyText
+    title: NonEmptyText
+    printed_page: str | None = None
+    physical_page: int = Field(ge=1)
+
+
+class GeneratedAnswer(BaseModel):
+    query: NonEmptyText
+    answer: NonEmptyText
+    citations: list[AnswerCitation] = Field(default_factory=list)
+    model: NonEmptyText
+    retrieved_chunk_ids: list[NonEmptyText] = Field(default_factory=list)

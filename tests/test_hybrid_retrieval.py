@@ -17,7 +17,11 @@ from amu_admissions_rag.models import (
     ReviewStatus,
     SourceReference,
 )
-from amu_admissions_rag.retrieval import HashingEmbeddingProvider, HybridRetriever
+from amu_admissions_rag.retrieval import (
+    HashingEmbeddingProvider,
+    HybridRetriever,
+    format_llm_context,
+)
 
 
 class HybridRetrievalTests(unittest.TestCase):
@@ -143,7 +147,7 @@ class HybridRetrievalTests(unittest.TestCase):
         np.testing.assert_array_equal(first, second)
         self.assertAlmostEqual(float(np.linalg.norm(first[0])), 1.0, places=6)
 
-    def test_intent_boost_selects_the_course_field(self) -> None:
+    def test_query_retrieves_complete_course_information(self) -> None:
         response = self.retriever.search("Am I eligible for M.C.A.?", limit=3)
 
         self.assertEqual(
@@ -151,10 +155,12 @@ class HybridRetrievalTests(unittest.TestCase):
             "Am I eligible for Master of Computer Science and Applications?",
         )
         self.assertEqual(response.hits[0].chunk.parent_record_id, self.mca.record_id)
-        self.assertEqual(response.hits[0].chunk.field_name, "qualifying_examination")
-        self.assertGreater(response.hits[0].intent_boost, 0)
+        self.assertIn("Qualifying Examination:", response.hits[0].chunk.text)
+        self.assertIn("Age Limit:", response.hits[0].chunk.text)
+        self.assertIn("Course Details:", response.hits[0].chunk.text)
+        self.assertGreater(response.hits[0].course_match_boost, 0)
 
-    def test_retrieved_child_hydrates_the_parent_course(self) -> None:
+    def test_retrieved_course_retains_source_and_parent(self) -> None:
         response = self.retriever.search("What is the MCA age limit?", limit=2)
 
         self.assertIn(self.mca.record_id, response.course_parents)
@@ -166,16 +172,20 @@ class HybridRetrievalTests(unittest.TestCase):
         response = self.retriever.search("How does MBA selection work?", limit=1)
 
         self.assertEqual(response.hits[0].chunk.parent_record_id, self.mba.record_id)
-        self.assertEqual(response.hits[0].chunk.field_name, "selection_process")
+        self.assertIn("Selection Process:", response.hits[0].chunk.text)
+        self.assertIn("admission test and interview", response.hits[0].chunk.text)
 
-    def test_exact_structured_value_breaks_similar_table_row_tie(self) -> None:
+    def test_course_chunk_retains_all_similar_table_rows(self) -> None:
         response = self.retriever.search(
             "How many Computer Applications seats are there?",
             limit=2,
         )
 
-        self.assertIn("Branch Name: Computer Applications\n", response.hits[0].chunk.text)
-        self.assertGreater(response.hits[0].exact_value_boost, 0)
+        self.assertIn("Branch Name=Computer Applications; Intake=40", response.hits[0].chunk.text)
+        self.assertIn(
+            "Branch Name=Computer Applications (Data Science); Intake=20",
+            response.hits[0].chunk.text,
+        )
 
     def test_course_discovery_ranks_profiles_and_attaches_field_evidence(self) -> None:
         response = self.retriever.discover_courses(
@@ -190,8 +200,8 @@ class HybridRetrievalTests(unittest.TestCase):
             response.candidates[0].profile.chunk.text,
         )
         self.assertEqual(
-            response.candidates[0].evidence[0].chunk.field_name,
-            "qualifying_examination",
+            response.candidates[0].evidence[0].chunk.chunk_id,
+            response.candidates[0].profile.chunk.chunk_id,
         )
 
     def test_named_course_discovery_exposes_numeric_requirement(self) -> None:
@@ -206,6 +216,16 @@ class HybridRetrievalTests(unittest.TestCase):
             "16 Mathematics credits",
             response.candidates[0].evidence[0].chunk.text,
         )
+
+    def test_llm_context_contains_information_and_citation_not_scores(self) -> None:
+        response = self.retriever.search("Can I do MCA?", limit=1)
+
+        context = format_llm_context(response.hits)
+
+        self.assertIn("[SOURCE 1]", context)
+        self.assertIn("16 Mathematics credits", context)
+        self.assertIn("page A.40", context)
+        self.assertNotIn("fused_score", context)
 
 
 if __name__ == "__main__":

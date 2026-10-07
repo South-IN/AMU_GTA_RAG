@@ -272,3 +272,16 @@
 - The approved index remains 190 chunks across 15 reviewed courses
 - The course-discovery evaluation passes 5/5 cases at rank 1
 - The complete test suite passes 70 tests
+
+### Simplified final chunk contract
+
+- Replaced course parent/child retrieval output with one complete chunk per course
+- Included all course fields, every normalized table row and all source pages in that chunk
+- Kept policy sections and appendix rows as separate information chunks
+- Added an LLM-context formatter that emits only retrieved content and citations
+- Excluded ranking scores, coordinates and internal metadata from LLM context
+- Added an exact course-name boost so large chunks such as Ph.D. still rank correctly
+- The approved index now contains 15 complete chunks for 15 reviewed courses
+- The full preview contains 1,723 chunks: 179 courses plus policy and appendix content
+- Field retrieval remains 16/16 at top-5 and course discovery remains 5/5 at rank 1
+- The complete test suite passes 71 tests

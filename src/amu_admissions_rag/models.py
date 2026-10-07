@@ -280,6 +280,7 @@ class RetrievalHit(BaseModel):
     vector_rank: int | None = Field(default=None, ge=1)
     intent_boost: float = Field(default=0, ge=0)
     exact_value_boost: float = Field(default=0, ge=0)
+    course_match_boost: float = Field(default=0, ge=0)
 
 
 class RetrievalResponse(BaseModel):

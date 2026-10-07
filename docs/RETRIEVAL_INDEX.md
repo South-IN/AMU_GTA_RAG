@@ -2,7 +2,7 @@
 
 ## Scope
 
-Phase 6 converts reviewed records into self-contained retrieval chunks and defines the PostgreSQL storage and hybrid-ranking layer. It does not add a graph database or choose an embedding provider.
+Phase 6 converts reviewed records into complete information chunks and defines the PostgreSQL storage and hybrid-ranking layer. It does not add a graph database or choose an embedding provider.
 
 ## Approval Gate
 
@@ -16,27 +16,29 @@ Review decisions are stored in auditable batch files containing the reviewer, ti
 
 ## Chunk Contract
 
-Every course child contains enough text to be found without first loading its parent:
+Each course becomes one complete chunk taken from the normalized course JSON:
 
 ```text
 Course: Master of Computer Science and Applications (MCA)
 Course Code: CAMSA
 Faculty: Faculty of Science
 Programme Level: postgraduate
-Field: Qualifying Examination
-
-<reviewed eligibility text>
+Qualifying Examination: <reviewed eligibility text>
+Age Limit: <reviewed age rule>
+Selection Process: <reviewed selection rule>
+Test Paper Details: <reviewed test information>
+Course Details:
+<all normalized table rows>
+Source Pages: <printed and physical pages>
 ```
 
-It also stores the course record ID as `parent_record_id`. Retrieval searches the child text. Parent hydration uses the ID after a child has been selected.
+Retrieval searches this content directly. The retrieved chunk is passed to the answer-generating LLM with its source citation. Internal ranking scores and metadata are not included in the LLM context.
 
 Chunk types:
 
 | Type | Granularity | Parent use |
 |---|---|---|
-| `course_overview` | One per course | Load complete course |
-| `course_field` | One per named course field | Load course and sibling fields |
-| `course_table_row` | One per normalized table row | Load complete table/course |
+| `course_overview` | One complete chunk per course | Direct LLM context |
 | `policy_section` | Existing heading-aware policy chunk | Source record only |
 | `appendix_row` | One application, schedule or fee row | Source record only |
 
@@ -75,8 +77,8 @@ Original query
   -> optional course/field filters
   -> full-text and vector candidate lists
   -> Reciprocal Rank Fusion
-  -> selected child chunks
-  -> parent course hydration where applicable
+  -> selected complete information chunks
+  -> LLM context containing chunk text and page citations
   -> grounded answer with page citations
 ```
 
@@ -104,7 +106,7 @@ python -m amu_admissions_rag.load_index_cli --apply-schema
 
 The loader performs an atomic replacement scoped to one document and refuses an empty approved corpus unless `--allow-empty` is explicitly supplied.
 
-The current reviewed 15-course batch produces 190 approved course chunks. Policy and appendix records remain pending and are excluded until their own review batches are applied.
+The current reviewed 15-course batch produces 15 approved course chunks. The full preview contains 1,723 chunks: 179 complete course chunks plus policy and appendix chunks. Policy and appendix records remain pending and are excluded from the approved index until reviewed.
 
 ## Deferred Decisions
 

@@ -102,20 +102,17 @@ class RetrievalChunkBuilderTests(unittest.TestCase):
             review=self.approved,
         )
 
-    def test_course_field_chunk_is_self_contained_and_linked(self) -> None:
+    def test_course_chunk_contains_internal_information_and_source(self) -> None:
         corpus = self._build()
-        chunk = next(
-            item
-            for item in corpus.chunks
-            if item.chunk_type is ChunkType.COURSE_FIELD
-        )
+        chunk = next(item for item in corpus.chunks if item.parent_record_id == self.course.record_id)
 
         self.assertEqual(chunk.parent_record_id, self.course.record_id)
         self.assertIn("Master of Computer Science and Applications (MCA)", chunk.text)
         self.assertIn("Course Code: CAMSA", chunk.text)
-        self.assertIn("Field: Qualifying Examination", chunk.text)
+        self.assertIn("Qualifying Examination: Applicants require Mathematics", chunk.text)
         self.assertIn("at least 55% marks", chunk.text)
-        self.assertEqual(chunk.field_name, "qualifying_examination")
+        self.assertIn("Source Pages: AMU Guide to Admissions 2026-27", chunk.text)
+        self.assertIsNone(chunk.field_name)
 
     def test_course_profile_contains_full_fields_and_table_summary(self) -> None:
         corpus = self._build()
@@ -132,19 +129,15 @@ class RetrievalChunkBuilderTests(unittest.TestCase):
         )
         self.assertIn("Duration=4 Semesters", profile.text)
         self.assertIn("Intake=60+6", profile.text)
-        self.assertEqual(profile.metadata["retrieval_role"], "course_discovery")
+        self.assertEqual(profile.metadata["retrieval_role"], "llm_context")
 
-    def test_course_table_row_is_its_own_self_contained_chunk(self) -> None:
+    def test_complete_course_chunk_contains_every_table_row(self) -> None:
         corpus = self._build()
-        chunk = next(
-            item
-            for item in corpus.chunks
-            if item.chunk_type is ChunkType.COURSE_TABLE_ROW
-        )
+        chunk = next(item for item in corpus.chunks if item.parent_record_id == self.course.record_id)
 
         self.assertIn("Course: Master of Computer Science", chunk.text)
-        self.assertIn("Duration: 4 Semesters", chunk.text)
-        self.assertIn("Intake: 60+6", chunk.text)
+        self.assertIn("Duration=4 Semesters", chunk.text)
+        self.assertIn("Intake=60+6", chunk.text)
         self.assertEqual(chunk.parent_record_id, self.course.record_id)
 
     def test_policy_and_appendix_chunks_are_independently_searchable(self) -> None:
@@ -211,7 +204,7 @@ class RetrievalChunkBuilderTests(unittest.TestCase):
             include_pending=True,
         )
 
-        self.assertEqual(len(corpus.chunks), 3)
+        self.assertEqual(len(corpus.chunks), 1)
         self.assertTrue(
             all(chunk.review.status is ReviewStatus.PENDING for chunk in corpus.chunks)
         )
@@ -260,7 +253,7 @@ class RetrievalChunkBuilderTests(unittest.TestCase):
             ),
         )
 
-        self.assertEqual(count, 5)
+        self.assertEqual(count, 3)
         chunk_rows = next(
             rows
             for query, rows in connection.cursor_instance.batches

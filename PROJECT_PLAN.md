@@ -48,12 +48,11 @@ Extract and preserve:
 
 ### Chunking
 
-- One content-rich profile chunk per course for course discovery
-- Child chunks for eligibility, selection process and test details
+- One complete information chunk per course
 - Policy chunks split at headings and numbered rules
 - One structured record per appendix table row
 
-Course profiles contain all narrative fields plus a bounded table summary. Course child chunks remain self-contained: every child repeats the canonical course name, course code, faculty, programme level and field/table label. Course discovery ranks profiles and hydrates complete parents; child fields provide the final evidence and citations. This is relational parent aggregation, not graph retrieval.
+Each course chunk contains its canonical identity, every narrative field, every normalized table row and all contributing source pages. Retrieved chunks are formatted as content plus citations and sent directly to the answer-generating LLM. Ranking scores and internal metadata are not included in that prompt.
 
 ### Human validation
 

@@ -8,21 +8,20 @@ Phase 8 provides a runnable retrieval path over the approved corpus.
 2. Detect intent and produce soft field preferences.
 3. Search the same self-contained chunks with BM25 and vector similarity.
 4. Fuse both ranked lists with Reciprocal Rank Fusion (RRF).
-5. Add small soft boosts for a requested field and exact structured values such as branch names or course codes.
-6. Return source-page provenance and hydrate linked course parents.
+5. Return the highest-ranked complete information chunks.
+6. Format only their content and page citations for the answer-generating LLM.
 
-Parent hydration happens after retrieval. It gives the application the complete reviewed course record and sibling fields while the retrieved child remains the cited evidence.
+Ranking scores and internal metadata are not sent to the LLM.
 
-## Multi-granularity course discovery
+## Chunk contract
 
-Every approved course has two retrieval representations:
+The current design deliberately uses one retrieval representation per record:
 
-- A content-rich course profile containing all narrative fields and a bounded table summary. It is used to discover and rank complete courses.
-- Focused field and table-row chunks. They provide precise evidence and page citations.
+- One complete chunk per course, including every narrative field and every normalized table row.
+- One chunk per policy section.
+- One chunk per appendix row.
 
-Course discovery ranks only course profiles, applies a soft programme-progression preference when the applicant explicitly reports a completed qualification, hydrates the complete parent record, and then attaches the most relevant child evidence. Table summaries include at most 20 rows; the hydrated parent and table-row chunks retain every row.
-
-This is relational parent aggregation, not graph retrieval. A course profile is a recall document and must not be used as the sole citation when its content spans pages.
+Course chunks list every contributing printed and physical page. Retrieval can return several complete courses for comparison. The LLM receives the retrieved information directly and is instructed to answer only from those sources.
 
 ## Embedding boundary
 
@@ -35,6 +34,9 @@ The hashing provider validates vector storage, cosine ranking, fusion and parent
 ```powershell
 $env:PYTHONPATH = "src"
 & $python -m amu_admissions_rag.retrieval_cli "Am I eligible for M.C.A.?" --limit 5
+& $python -m amu_admissions_rag.retrieval_cli `
+  "I have 12 Mathematics credits. Can I do MCA?" `
+  --limit 1 --llm-context
 & $python -m amu_admissions_rag.retrieval_cli `
   "I completed B.Sc. Computer Science. Which courses am I eligible for?" `
   --discover-courses --limit 5

@@ -56,6 +56,9 @@ Run hybrid retrieval over the approved corpus:
 ```powershell
 & $python -m amu_admissions_rag.retrieval_cli "What is the MCA age limit?" --limit 5
 & $python -m amu_admissions_rag.retrieval_cli `
+  "I have 12 Mathematics credits. Can I do MCA?" `
+  --limit 1 --llm-context
+& $python -m amu_admissions_rag.retrieval_cli `
   "I completed B.Sc. Computer Science. Which courses can I apply for?" `
   --discover-courses --limit 5
 ```

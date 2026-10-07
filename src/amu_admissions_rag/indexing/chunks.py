@@ -2,16 +2,12 @@
 
 from __future__ import annotations
 
-from collections.abc import Iterable
-
 from amu_admissions_rag.models import (
     AppendixRecord,
     AppendixType,
     ChunkType,
     CourseCorpus,
-    CourseField,
     CourseRecord,
-    CourseTable,
     IndexCorpus,
     PolicyCorpus,
     RetrievalChunk,
@@ -53,11 +49,7 @@ class RetrievalChunkBuilder:
         return IndexCorpus(document=course_corpus.document, chunks=chunks)
 
     def _course_chunks(self, course: CourseRecord) -> list[RetrievalChunk]:
-        chunks = [self._course_overview_chunk(course)]
-        chunks.extend(self._course_field_chunk(course, field) for field in course.fields)
-        for table_index, table in enumerate(course.tables, start=1):
-            chunks.extend(self._course_table_chunks(course, table, table_index))
-        return chunks
+        return [self._course_overview_chunk(course)]
 
     def _course_overview_chunk(self, course: CourseRecord) -> RetrievalChunk:
         lines = self._course_context(course)
@@ -65,96 +57,37 @@ class RetrievalChunkBuilder:
         for field in course.fields:
             lines.extend([f"{field.label}: {field.value}", ""])
         for table in course.tables:
-            lines.append(f"{self._display_name(table.name)} Summary:")
-            for row_index, row in enumerate(table.rows[:20], start=1):
+            lines.append(f"{self._display_name(table.name)}:")
+            for row_index, row in enumerate(table.rows, start=1):
                 values = [
                     f"{self._display_name(header)}={row[header].text}"
                     for header in table.headers
                     if header in row
                 ]
                 lines.append(f"Row {row_index}: {'; '.join(values)}")
-            if len(table.rows) > 20:
-                lines.append(
-                    f"Additional Rows: {len(table.rows) - 20}; "
-                    "available through linked table-row evidence"
-                )
+            lines.append("")
+        lines.append(f"Source Pages: {self._course_source_pages(course)}")
         return RetrievalChunk(
             chunk_id=f"{course.record_id}:overview",
             document_id=course.document_id,
             chunk_type=ChunkType.COURSE_OVERVIEW,
             parent_record_id=course.record_id,
-            title=f"{course.course_name} - Course Profile",
+            title=f"{course.course_name} - Complete Course Information",
             text="\n".join(lines),
             source=course.source,
             metadata={
                 **self._course_metadata(course),
-                "retrieval_role": "course_discovery",
+                "retrieval_role": "llm_context",
             },
             review=course.review,
         )
-
-    def _course_field_chunk(
-        self,
-        course: CourseRecord,
-        field: CourseField,
-    ) -> RetrievalChunk:
-        lines = self._course_context(course)
-        lines.extend([f"Field: {field.label}", "", field.value])
-        return RetrievalChunk(
-            chunk_id=f"{course.record_id}:field:{field.name}",
-            document_id=course.document_id,
-            chunk_type=ChunkType.COURSE_FIELD,
-            parent_record_id=course.record_id,
-            title=f"{course.course_name} - {field.label}",
-            text="\n".join(lines),
-            source=field.source,
-            field_name=field.name,
-            metadata=self._course_metadata(course),
-            review=course.review,
-        )
-
-    def _course_table_chunks(
-        self,
-        course: CourseRecord,
-        table: CourseTable,
-        table_index: int,
-    ) -> Iterable[RetrievalChunk]:
-        for row_index, row in enumerate(table.rows, start=1):
-            lines = self._course_context(course)
-            lines.extend(
-                [
-                    f"Table: {self._display_name(table.name)}",
-                    f"Table Row: {row_index}",
-                    "",
-                ]
-            )
-            for header in table.headers:
-                cell = row.get(header)
-                if cell is not None:
-                    lines.append(f"{self._display_name(header)}: {cell.text}")
-            yield RetrievalChunk(
-                chunk_id=(
-                    f"{course.record_id}:table:{table_index}:row:{row_index}"
-                ),
-                document_id=course.document_id,
-                chunk_type=ChunkType.COURSE_TABLE_ROW,
-                parent_record_id=course.record_id,
-                title=(
-                    f"{course.course_name} - "
-                    f"{self._display_name(table.name)} row {row_index}"
-                ),
-                text="\n".join(lines),
-                source=table.source,
-                field_name=table.name,
-                metadata=self._course_metadata(course),
-                review=course.review,
-            )
 
     def _policy_chunk(self, section: SectionRecord) -> RetrievalChunk:
         lines = [f"Section: {section.heading}"]
         if section.heading_path:
             lines.append(f"Section Path: {' > '.join(section.heading_path)}")
         lines.extend(["", section.text])
+        lines.append(f"\nSource: {self._source_page(section.source)}")
         return RetrievalChunk(
             chunk_id=f"{section.record_id}:chunk",
             document_id=section.document_id,
@@ -185,6 +118,7 @@ class RetrievalChunkBuilder:
             f"{self._display_name(name)}: {cell.text}"
             for name, cell in record.values.items()
         )
+        lines.append(f"\nSource: {self._source_page(record.source)}")
         metadata: dict[str, str | int | float | bool | None] = {
             "appendix_type": record.appendix_type.value,
             "course_name": record.course_name,
@@ -256,3 +190,27 @@ class RetrievalChunkBuilder:
             AppendixType.TEST_SCHEDULE: "Admission Test Schedule",
             AppendixType.FEE_SUMMARY: "Admission Fee",
         }[appendix_type]
+
+    @classmethod
+    def _course_source_pages(cls, course: CourseRecord) -> str:
+        sources = [course.source]
+        sources.extend(field.source for field in course.fields)
+        sources.extend(table.source for table in course.tables)
+        unique: list[str] = []
+        for source in sources:
+            label = cls._source_page(source)
+            if label not in unique:
+                unique.append(label)
+        return ", ".join(unique)
+
+    @staticmethod
+    def _source_page(source) -> str:
+        if source.printed_page:
+            return (
+                f"AMU Guide to Admissions 2026-27, page {source.printed_page} "
+                f"(physical page {source.physical_page})"
+            )
+        return (
+            "AMU Guide to Admissions 2026-27, "
+            f"physical page {source.physical_page}"
+        )

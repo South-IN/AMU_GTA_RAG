@@ -7,7 +7,7 @@ from pathlib import Path
 
 from amu_admissions_rag.config import AppPaths
 from amu_admissions_rag.models import CourseCorpus, IndexCorpus
-from amu_admissions_rag.retrieval import HybridRetriever
+from amu_admissions_rag.retrieval import HybridRetriever, format_llm_context
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -21,6 +21,11 @@ def build_parser() -> argparse.ArgumentParser:
         "--discover-courses",
         action="store_true",
         help="Rank course profiles and attach focused evidence per course",
+    )
+    parser.add_argument(
+        "--llm-context",
+        action="store_true",
+        help="Print only retrieved content and citations for the answer LLM",
     )
     return parser
 
@@ -47,15 +52,14 @@ def main() -> None:
             for evidence in candidate.evidence:
                 source = evidence.chunk.source
                 page = source.printed_page or str(source.physical_page)
-                print(
-                    f"   Evidence: {evidence.chunk.title} "
-                    f"[page {page}; {evidence.chunk.field_name or evidence.chunk.chunk_type.value}]"
-                )
-                evidence_text = evidence.chunk.text.split("\n\n", 1)[-1]
-                print(f"   {evidence_text}")
+                print(f"   Retrieved chunk: {evidence.chunk.title} [page {page}]")
+                print(evidence.chunk.text)
         return
 
     response = retriever.search(args.query, limit=args.limit)
+    if args.llm_context:
+        print(format_llm_context(response.hits))
+        return
     if args.json:
         print(response.model_dump_json(indent=2))
         return

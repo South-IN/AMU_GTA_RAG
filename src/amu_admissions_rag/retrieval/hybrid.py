@@ -69,7 +69,7 @@ class HybridRetriever:
         vector_ranks = {index: rank for rank, index in enumerate(vector_order, start=1)}
 
         candidate_indexes = set(lexical_order) | set(vector_order)
-        scored: list[tuple[float, int, float, float]] = []
+        scored: list[tuple[float, int, float, float, float]] = []
         for index in candidate_indexes:
             fused_score = 0.0
             if index in lexical_ranks:
@@ -92,7 +92,23 @@ class HybridRetriever:
             ):
                 exact_value_boost = 0.5 / (self.rrf_k + 1)
                 fused_score += exact_value_boost
-            scored.append((fused_score, index, intent_boost, exact_value_boost))
+            course_match_boost = 0.0
+            chunk_text = chunk.text.casefold()
+            if any(
+                f"expanded course name: {match.full_name}".casefold() in chunk_text
+                for match in analysis.aliases
+            ):
+                course_match_boost = 1.5 / (self.rrf_k + 1)
+                fused_score += course_match_boost
+            scored.append(
+                (
+                    fused_score,
+                    index,
+                    intent_boost,
+                    exact_value_boost,
+                    course_match_boost,
+                )
+            )
 
         scored.sort(
             key=lambda item: (
@@ -104,7 +120,13 @@ class HybridRetriever:
         )
         hits: list[RetrievalHit] = []
         hydrated: dict[str, CourseRecord] = {}
-        for fused_score, index, intent_boost, exact_value_boost in scored[:limit]:
+        for (
+            fused_score,
+            index,
+            intent_boost,
+            exact_value_boost,
+            course_match_boost,
+        ) in scored[:limit]:
             chunk = self.index_corpus.chunks[index]
             hits.append(
                 RetrievalHit(
@@ -116,6 +138,7 @@ class HybridRetriever:
                     vector_rank=vector_ranks.get(index),
                     intent_boost=intent_boost,
                     exact_value_boost=exact_value_boost,
+                    course_match_boost=course_match_boost,
                 )
             )
             parent = self.course_parents.get(chunk.parent_record_id)
@@ -133,12 +156,11 @@ class HybridRetriever:
         query: str,
         *,
         limit: int = 5,
-        evidence_per_course: int = 2,
     ) -> CourseDiscoveryResponse:
-        """Rank content-rich course profiles and attach citable child evidence."""
+        """Rank complete course-information chunks."""
 
-        if limit < 1 or evidence_per_course < 1:
-            raise ValueError("limit and evidence_per_course must be positive")
+        if limit < 1:
+            raise ValueError("limit must be positive")
         analysis = self.query_processor.analyze(query)
         profile_indexes = [
             index
@@ -189,11 +211,6 @@ class HybridRetriever:
             reverse=True,
         )
 
-        evidence_response = self.search(
-            query,
-            limit=len(self.index_corpus.chunks),
-            candidate_limit=len(self.index_corpus.chunks),
-        )
         preferred_levels = self._preferred_target_levels(analysis.expanded_query)
         candidate_profiles: list[
             tuple[float, float, RetrievalHit, CourseRecord]
@@ -212,27 +229,13 @@ class HybridRetriever:
 
         candidates: list[CourseCandidate] = []
         for score, level_boost, profile, parent in candidate_profiles[:limit]:
-            evidence = [
-                hit
-                for hit in evidence_response.hits
-                if hit.chunk.parent_record_id == parent.record_id
-                and hit.chunk.chunk_type is not ChunkType.COURSE_OVERVIEW
-            ]
-            if analysis.preferred_fields:
-                evidence.sort(
-                    key=lambda hit: (
-                        hit.chunk.field_name in analysis.preferred_fields,
-                        hit.fused_score,
-                    ),
-                    reverse=True,
-                )
             candidates.append(
                 CourseCandidate(
                     course=parent,
                     score=score,
                     program_level_boost=level_boost,
                     profile=profile,
-                    evidence=evidence[:evidence_per_course],
+                    evidence=[profile],
                 )
             )
         return CourseDiscoveryResponse(

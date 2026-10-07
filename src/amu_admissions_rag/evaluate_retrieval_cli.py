@@ -11,6 +11,16 @@ from amu_admissions_rag.models import CourseCorpus, IndexCorpus
 from amu_admissions_rag.retrieval import HybridRetriever
 
 
+FIELD_LABELS = {
+    "qualifying_examination": "Qualifying Examination:",
+    "age_limit": "Age Limit:",
+    "selection_process": "Selection Process:",
+    "test_paper_details": "Test Paper Details:",
+    "test_centres": "Test Centre(s):",
+    "course_details": "Course Details:",
+}
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Evaluate approved-corpus retrieval")
     parser.add_argument("--queries", type=Path, default=Path("evaluation/retrieval_queries.json"))
@@ -90,12 +100,19 @@ def main() -> None:
         response = retriever.search(case["query"], limit=args.limit)
         expected_parent = case["expected_parent_record_id"]
         expected_field = case.get("expected_field")
+        expected_label = FIELD_LABELS.get(expected_field)
         parent_match = any(
             hit.chunk.parent_record_id == expected_parent for hit in response.hits
         )
         field_match = expected_field is None or any(
             hit.chunk.parent_record_id == expected_parent
-            and hit.chunk.field_name == expected_field
+            and (
+                hit.chunk.field_name == expected_field
+                or (
+                    expected_label is not None
+                    and expected_label in hit.chunk.text
+                )
+            )
             for hit in response.hits
         )
         success = parent_match and field_match

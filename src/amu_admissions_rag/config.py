@@ -6,7 +6,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 
-DEFAULT_PDF_NAME = "c7cabd0dcdcb3d7793446b0ea7c88a49.pdf"
+DEFAULT_PDF_NAME = "guide_to_admission_2026_27.pdf"
 
 
 @dataclass(frozen=True)

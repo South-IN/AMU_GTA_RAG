@@ -7,7 +7,7 @@ import json
 from pathlib import Path
 
 from amu_admissions_rag.config import AppPaths
-from amu_admissions_rag.models import CourseCorpus, IndexCorpus
+from amu_admissions_rag.corpus import load_approved_corpora
 from amu_admissions_rag.retrieval import HybridRetriever
 
 
@@ -36,17 +36,7 @@ def build_parser() -> argparse.ArgumentParser:
 
 def main() -> None:
     args = build_parser().parse_args()
-    paths = AppPaths.from_package()
-    index_corpus = IndexCorpus.model_validate_json(
-        (paths.processed_dir / "guide-2026-27.index-corpus.approved.json").read_text(
-            encoding="utf-8"
-        )
-    )
-    course_corpus = CourseCorpus.model_validate_json(
-        (paths.review_dir / "guide-2026-27.course-corpus.reviewed.json").read_text(
-            encoding="utf-8"
-        )
-    )
+    index_corpus, course_corpus = load_approved_corpora(AppPaths.from_package())
     cases = json.loads(args.queries.read_text(encoding="utf-8"))
     retriever = HybridRetriever(index_corpus, course_corpus)
     results: list[dict[str, object]] = []

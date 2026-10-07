@@ -1,5 +1,12 @@
 """Persistent storage adapters."""
 
-from .postgres import PostgresIndexStore
+from .migrations import Migration, apply_migrations, discover_migrations
+from .postgres import IngestionRun, PostgresIndexStore
 
-__all__ = ["PostgresIndexStore"]
+__all__ = [
+    "IngestionRun",
+    "Migration",
+    "PostgresIndexStore",
+    "apply_migrations",
+    "discover_migrations",
+]

@@ -8,7 +8,10 @@ class AppPathsTests(unittest.TestCase):
     def test_package_resolves_project_root(self) -> None:
         paths = AppPaths.from_package()
 
-        self.assertEqual(paths.project_root.name, "AMU_GTA_RAG")
+        # Avoid asserting the checkout directory name; it varies by machine and
+        # filesystem case sensitivity.
+        self.assertTrue((paths.project_root / "pyproject.toml").is_file())
+        self.assertTrue((paths.project_root / "src" / "amu_admissions_rag").is_dir())
         self.assertEqual(paths.source_pdf.name, DEFAULT_PDF_NAME)
 
     def test_source_pdf_exists(self) -> None:

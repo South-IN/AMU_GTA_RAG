@@ -99,12 +99,15 @@ python -m amu_admissions_rag.index_cli --include-pending
 
 Load reviewed records into PostgreSQL:
 
-```powershell
-$env:AMU_RAG_DATABASE_URL = "postgresql://..."
-python -m amu_admissions_rag.load_index_cli --apply-schema
+```bash
+export AMU_RAG_DATABASE_URL="postgresql://..."
+amu-load-index --apply-schema \
+  --courses data/review/guide-2026-27.course-corpus.reviewed.json
 ```
 
-The loader performs an atomic replacement scoped to one document and refuses an empty approved corpus unless `--allow-empty` is explicitly supplied.
+`--apply-schema` runs the numbered migrations in `sql/` through the checksummed migration runner (`amu-migrate`). The loader performs an atomic replacement scoped to one document and refuses an empty approved corpus unless `--allow-empty` is explicitly supplied. It also stores each chunk's embedding, full source reference and load order, so the approved index can be rebuilt from the database exactly.
+
+In normal operation the Docker `ingest` service runs all of these steps with `amu-pipeline`; see [DOCKER.md](DOCKER.md).
 
 The current reviewed 15-course batch produces 15 approved course chunks. The full preview contains 1,723 chunks: 179 complete course chunks plus policy and appendix chunks. Policy and appendix records remain pending and are excluded from the approved index until reviewed.
 

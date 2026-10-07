@@ -1,5 +1,3 @@
-BEGIN;
-
 CREATE EXTENSION IF NOT EXISTS vector;
 
 DO $$
@@ -213,5 +211,3 @@ JOIN retrieval_chunks AS chunk USING (chunk_id)
 ORDER BY fused.score DESC, chunk.chunk_id
 LIMIT result_limit;
 $$;
-
-COMMIT;

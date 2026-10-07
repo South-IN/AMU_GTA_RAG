@@ -113,6 +113,7 @@ The local MVP runner uses BM25 now and a deterministic hashing-vector fallback s
 | Search | PostgreSQL full-text search and pgvector |
 | API | FastAPI |
 | Prototype UI | Streamlit |
+| Deployment | Docker Compose: separate app, one-shot ingestion and PostgreSQL/pgvector containers |
 | Generation | Hosted or local instruction model |
 
 ## 48-Hour Implementation Plan

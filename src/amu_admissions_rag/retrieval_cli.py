@@ -6,6 +6,11 @@ import argparse
 from pathlib import Path
 
 from amu_admissions_rag.config import AppPaths
+from amu_admissions_rag.corpus import (
+    APPROVED_INDEX_NAME,
+    REVIEWED_COURSES_NAME,
+    load_approved_corpora,
+)
 from amu_admissions_rag.models import CourseCorpus, IndexCorpus
 from amu_admissions_rag.retrieval import HybridRetriever, format_llm_context
 
@@ -33,10 +38,13 @@ def build_parser() -> argparse.ArgumentParser:
 def main() -> None:
     args = build_parser().parse_args()
     paths = AppPaths.from_package()
-    index_path = args.index or paths.processed_dir / "guide-2026-27.index-corpus.approved.json"
-    course_path = args.courses or paths.review_dir / "guide-2026-27.course-corpus.reviewed.json"
-    index_corpus = IndexCorpus.model_validate_json(index_path.read_text(encoding="utf-8"))
-    course_corpus = CourseCorpus.model_validate_json(course_path.read_text(encoding="utf-8"))
+    if args.index or args.courses:
+        index_path = args.index or paths.processed_dir / APPROVED_INDEX_NAME
+        course_path = args.courses or paths.review_dir / REVIEWED_COURSES_NAME
+        index_corpus = IndexCorpus.model_validate_json(index_path.read_text(encoding="utf-8"))
+        course_corpus = CourseCorpus.model_validate_json(course_path.read_text(encoding="utf-8"))
+    else:
+        index_corpus, course_corpus = load_approved_corpora(paths)
     retriever = HybridRetriever(index_corpus, course_corpus)
     if args.discover_courses:
         response = retriever.discover_courses(args.query, limit=args.limit)

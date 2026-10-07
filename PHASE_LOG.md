@@ -346,3 +346,40 @@
 - Verified automatic postgraduate course discovery with three independently linked source cards
 - Confirmed discovery answers disclose missing Mathematics-credit and aggregate-mark evidence instead of declaring full eligibility
 - Added service, citation rendering, safety repair and Streamlit landing-page tests
+
+## Phase 11: Docker Deployment and Database Migration
+
+**Status:** Complete
+**Date:** 2026-10-07
+
+### Changes
+
+- Added a Dockerfile and `compose.yaml` with separate `db` (PostgreSQL 17 + pgvector), one-shot `ingest` and Streamlit `app` containers
+- Made PostgreSQL the system of record: the app, retrieval CLI and evaluation CLIs load the approved corpus from the database when `AMU_RAG_DATABASE_URL` is set
+- Added a migration runner with ordered files, per-migration transactions, SHA-256 checksums, a `schema_migrations` table and an advisory lock
+- Moved transaction control from `001_retrieval_schema.sql` into the runner
+- Added migration `002` for chunk load order, full chunk source provenance and an `ingestion_runs` audit table
+- The loader now stores embeddings, so the SQL `hybrid_search_chunks` function has a working vector branch
+- Added `amu-pipeline`, which extracts the PDF once, parses, applies every review batch in `reviews/`, builds the approved index and loads it atomically with an ingestion record
+- Added fingerprint-based change detection so unchanged inputs skip re-ingestion
+- Added routing that applies each review decision to the course or policy corpus owning its record ID
+- Added `amu-migrate`; `amu-load-index --apply-schema` now uses the migration runner
+- Kept the JSON fallback for local development when no database URL is configured
+- Fixed the configuration test that asserted an uppercase checkout directory name
+
+### Decisions
+
+- Keep ranking in the evaluated `HybridRetriever` and load its corpus from PostgreSQL, so the migration cannot change answers; SQL-side ranking is a separate, evaluated change
+- Bind container ports to `127.0.0.1` and inject secrets at runtime; `.env` is excluded from the image
+- Keep human review as the ingestion gate: only approved records are loaded, enforced in code and by a database constraint
+
+### Validation
+
+- The new pipeline's JSON artifacts are byte-identical to the original stage-by-stage CLI outputs
+- Live load into pgvector: 2 migrations, 1 document, 15 approved course records, 15 chunks with 1024-dimension embeddings and no unapproved rows
+- The approved index and course records loaded from PostgreSQL equal the JSON artifacts field for field, in order
+- Retrieval evaluation from the database: 16/16 at top-5 and course discovery 5/5 at top-3; both reports are byte-identical to the JSON baseline
+- The containerized app passed its health check and answered the MCA credit question from the database with a page B.25 citation
+- After `down`/`up`, the database persisted and ingestion skipped unchanged inputs
+- 102 tests pass, including 5 PostgreSQL integration tests run against a disposable `amu_test` database
+

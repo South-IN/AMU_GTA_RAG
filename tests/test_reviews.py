@@ -7,13 +7,15 @@ from amu_admissions_rag.models import (
     CourseCorpus,
     CourseRecord,
     DocumentRecord,
+    PolicyCorpus,
     ProgramLevel,
     ReviewBatch,
     ReviewDecision,
     ReviewStatus,
+    SectionRecord,
     SourceReference,
 )
-from amu_admissions_rag.reviews import apply_course_review_batch
+from amu_admissions_rag.reviews import apply_course_review_batch, apply_review_batches
 
 
 class ReviewBatchTests(unittest.TestCase):
@@ -94,6 +96,54 @@ class ReviewBatchTests(unittest.TestCase):
                 reviewer="project-owner",
                 reviewed_at=datetime(2026, 10, 7, tzinfo=timezone.utc),
                 decisions=[decision, decision],
+            )
+
+    def test_batches_are_routed_by_record_and_later_batches_win(self) -> None:
+        section = SectionRecord(
+            record_id="guide:refunds",
+            document_id="guide",
+            heading="Refunds",
+            text="Refund rules.",
+            source=SourceReference(document_id="guide", physical_page=52),
+        )
+        first = ReviewBatch(
+            reviewer="first-reviewer",
+            reviewed_at=datetime(2026, 10, 7, tzinfo=timezone.utc),
+            decisions=[
+                ReviewDecision(record_id=self.course.record_id, status=ReviewStatus.REJECTED),
+                ReviewDecision(record_id=section.record_id, status=ReviewStatus.APPROVED),
+            ],
+        )
+        second = ReviewBatch(
+            reviewer="second-reviewer",
+            reviewed_at=datetime(2026, 10, 8, tzinfo=timezone.utc),
+            decisions=[
+                ReviewDecision(record_id=self.course.record_id, status=ReviewStatus.APPROVED),
+            ],
+        )
+
+        courses, policies = apply_review_batches(
+            CourseCorpus(document=self.document, courses=[self.course]),
+            PolicyCorpus(document=self.document, sections=[section], appendix_rows=[]),
+            [first, second],
+        )
+
+        self.assertEqual(courses.courses[0].review.status, ReviewStatus.APPROVED)
+        self.assertEqual(courses.courses[0].review.reviewer, "second-reviewer")
+        self.assertEqual(policies.sections[0].review.status, ReviewStatus.APPROVED)
+        self.assertEqual(policies.sections[0].review.reviewer, "first-reviewer")
+
+    def test_routed_batches_reject_unknown_records(self) -> None:
+        batch = ReviewBatch(
+            reviewer="project-owner",
+            reviewed_at=datetime(2026, 10, 7, tzinfo=timezone.utc),
+            decisions=[ReviewDecision(record_id="unknown", status=ReviewStatus.APPROVED)],
+        )
+        with self.assertRaisesRegex(ValueError, "unknown records"):
+            apply_review_batches(
+                CourseCorpus(document=self.document, courses=[self.course]),
+                PolicyCorpus(document=self.document, sections=[], appendix_rows=[]),
+                [batch],
             )
 
 

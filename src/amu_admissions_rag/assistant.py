@@ -7,11 +7,10 @@ import re
 from dataclasses import dataclass
 
 from amu_admissions_rag.config import AppPaths
+from amu_admissions_rag.corpus import load_approved_corpora
 from amu_admissions_rag.generation import GroqAnswerGenerator, load_env_file
 from amu_admissions_rag.models import (
     AnswerCitation,
-    CourseCorpus,
-    IndexCorpus,
     QueryAnalysis,
     RetrievalHit,
 )
@@ -82,16 +81,7 @@ class AdmissionsAssistant:
         if not api_key:
             raise ValueError("GROQ_API_KEY is not configured")
         model = os.environ.get("GROQ_MODEL", "openai/gpt-oss-20b")
-        index = IndexCorpus.model_validate_json(
-            (paths.processed_dir / "guide-2026-27.index-corpus.approved.json").read_text(
-                encoding="utf-8"
-            )
-        )
-        courses = CourseCorpus.model_validate_json(
-            (paths.review_dir / "guide-2026-27.course-corpus.reviewed.json").read_text(
-                encoding="utf-8"
-            )
-        )
+        index, courses = load_approved_corpora(paths)
         return cls(HybridRetriever(index, courses), GroqAnswerGenerator(api_key, model=model))
 
     def ask(

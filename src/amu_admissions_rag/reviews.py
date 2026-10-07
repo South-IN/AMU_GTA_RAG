@@ -79,3 +79,38 @@ def _require_known_ids(
     missing = sorted(set(decisions) - known_ids)
     if missing:
         raise ValueError(f"review decisions reference unknown records: {missing}")
+
+
+def apply_review_batches(
+    course_corpus: CourseCorpus,
+    policy_corpus: PolicyCorpus,
+    batches: list[ReviewBatch],
+) -> tuple[CourseCorpus, PolicyCorpus]:
+    """Apply batches in order, routing each decision to the corpus that owns it."""
+
+    course_ids = {record.record_id for record in course_corpus.courses}
+    policy_ids = {
+        record.record_id
+        for record in [*policy_corpus.sections, *policy_corpus.appendix_rows]
+    }
+    for batch in batches:
+        unknown = sorted(
+            decision.record_id
+            for decision in batch.decisions
+            if decision.record_id not in course_ids | policy_ids
+        )
+        if unknown:
+            raise ValueError(f"review decisions reference unknown records: {unknown}")
+        course_decisions = [d for d in batch.decisions if d.record_id in course_ids]
+        policy_decisions = [d for d in batch.decisions if d.record_id in policy_ids]
+        if course_decisions:
+            course_corpus = apply_course_review_batch(
+                course_corpus,
+                batch.model_copy(update={"decisions": course_decisions}),
+            )
+        if policy_decisions:
+            policy_corpus = apply_policy_review_batch(
+                policy_corpus,
+                batch.model_copy(update={"decisions": policy_decisions}),
+            )
+    return course_corpus, policy_corpus

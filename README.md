@@ -10,81 +10,86 @@ Human-validated retrieval pipeline for the AMU Guide to Admissions 2026-27.
 - Prepare extracted content for human approval before indexing
 - Support exact facts and policy-oriented RAG queries
 
-## Development
+## Run with Docker
 
-```powershell
-python -m venv .venv
-$python = ".\.venv\Scripts\python.exe"
-& $python -m pip install -e .
-& $python -m unittest discover -s tests -v
+```bash
+cp .env.example .env      # set GROQ_API_KEY and a long random POSTGRES_PASSWORD
+docker compose up -d --build
 ```
 
-Build the pending policy and appendix corpus from the full extraction:
+Open <http://127.0.0.1:8501>. Compose starts three containers:
 
-```powershell
-$env:PYTHONPATH = "src"
-& $python -m amu_admissions_rag.policy_cli
-```
+- `db`: PostgreSQL with pgvector, the system of record for the approved corpus
+- `ingest`: a one-shot job that applies migrations, extracts the guide, applies the human-review batches in `reviews/` and loads only approved records
+- `app`: the Streamlit chat interface, which reads from `db`
 
-Build an approval-gated retrieval corpus:
+`ingest` skips work when the PDF, code, migrations and review batches are unchanged. Podman users can run the same file with `podman-compose`. See [docs/DOCKER.md](docs/DOCKER.md) for operations, migrations and troubleshooting.
 
-```powershell
-$env:PYTHONPATH = "src"
-& $python -m amu_admissions_rag.index_cli
-```
+## Human review
 
-Use `--include-pending` only for a local chunk preview. PostgreSQL loading requires approved records and `AMU_RAG_DATABASE_URL`; see [docs/RETRIEVAL_INDEX.md](docs/RETRIEVAL_INDEX.md).
+Extracted records start as `pending`. Approvals are applied from auditable review batches in `reviews/`, never by editing corpus JSON. Only approved records are indexed, and the database rejects any retrieval chunk that is not approved. To publish new approvals, add a batch file and run `docker compose up -d --build`.
 
-Human approvals are applied from an auditable review batch rather than by editing corpus JSON manually:
+A single batch can also be applied manually:
 
-```powershell
-& $python -m amu_admissions_rag.apply_review_cli `
-  --kind courses `
-  --input data/review/guide-2026-27.course-corpus.pending.json `
-  --decisions reviews/2026-10-07-course-sample.json `
+```bash
+amu-apply-review --kind courses \
+  --input data/review/guide-2026-27.course-corpus.pending.json \
+  --decisions reviews/2026-10-07-course-sample.json \
   --output data/review/guide-2026-27.course-corpus.reviewed.json
 ```
 
+## Local development
+
+```bash
+python -m venv .venv
+.venv/bin/pip install -e '.[dev]'
+.venv/bin/python -m unittest discover -s tests -v
+```
+
+Without `AMU_RAG_DATABASE_URL`, commands read and write the JSON artifacts in `data/`. Build them with:
+
+```bash
+.venv/bin/amu-pipeline --no-database
+```
+
+Setting `AMU_RAG_DATABASE_URL` (for example to the Compose database on `127.0.0.1:5433`) makes the same commands use PostgreSQL.
+
+The individual stages remain available as `amu-extract`, `amu-parse-courses`, `amu-parse-policies`, `amu-build-index`, `amu-load-index` and `amu-migrate`. See [docs/RETRIEVAL_INDEX.md](docs/RETRIEVAL_INDEX.md).
+
+## Querying
+
 Expand course abbreviations while preserving the rest of the query:
 
-```powershell
-& $python -m amu_admissions_rag.query_cli "Am I eligible for M.C.A.?"
+```bash
+amu-query "Am I eligible for M.C.A.?"
 ```
 
 See [docs/QUERY_PROCESSING.md](docs/QUERY_PROCESSING.md) for supported behavior and intent routing.
 
 Run hybrid retrieval over the approved corpus:
 
-```powershell
-& $python -m amu_admissions_rag.retrieval_cli "What is the MCA age limit?" --limit 5
-& $python -m amu_admissions_rag.retrieval_cli `
-  "I have 12 Mathematics credits. Can I do MCA?" `
-  --limit 1 --llm-context
-& $python -m amu_admissions_rag.retrieval_cli `
-  "I completed B.Sc. Computer Science. Which courses can I apply for?" `
+```bash
+amu-retrieve "What is the MCA age limit?" --limit 5
+amu-retrieve "I have 12 Mathematics credits. Can I do MCA?" --limit 1 --llm-context
+amu-retrieve "I completed B.Sc. Computer Science. Which courses can I apply for?" \
   --discover-courses --limit 5
 ```
 
-The local runner combines BM25, deterministic offline vectors and RRF, then hydrates the reviewed parent course. See [docs/HYBRID_RETRIEVAL.md](docs/HYBRID_RETRIEVAL.md).
+The runner combines BM25, deterministic offline vectors and RRF, then hydrates the reviewed parent course. See [docs/HYBRID_RETRIEVAL.md](docs/HYBRID_RETRIEVAL.md).
 
-Generate a grounded answer for any course in the approved guide corpus with Groq:
+Generate a grounded answer with Groq:
 
-```powershell
-& $python -m amu_admissions_rag.answer_cli `
-  "I have completed 12 credits in Mathematics. Can I do MCA?" `
-  --limit 1
+```bash
+amu-answer "I have completed 12 credits in Mathematics. Can I do MCA?" --limit 1
 ```
 
-The API key and model are read from the ignored `.env`; see [docs/ANSWER_GENERATION.md](docs/ANSWER_GENERATION.md).
+The API key and model are read from `.env`; see [docs/ANSWER_GENERATION.md](docs/ANSWER_GENERATION.md).
 
-Launch the Streamlit chat interface:
+Inside Docker, prefix any of these with `docker compose exec app`.
 
-```powershell
-$env:PYTHONPATH = "src"
-& $python -m streamlit run streamlit_app.py
-```
+## Chat interface
 
-The UI provides linked in-text citations, page-labelled source cards, automatic course-discovery routing and guarded eligibility language. See [docs/STREAMLIT_UI.md](docs/STREAMLIT_UI.md).
+The Streamlit UI provides linked in-text citations, page-labelled source cards, automatic course-discovery routing and guarded eligibility language. Outside Docker, run `.venv/bin/streamlit run streamlit_app.py`. See [docs/STREAMLIT_UI.md](docs/STREAMLIT_UI.md).
 
 See [PROJECT_PLAN.md](PROJECT_PLAN.md) for the full architecture and
 [PHASE_LOG.md](PHASE_LOG.md) for implementation history.

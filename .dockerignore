@@ -1,0 +1,21 @@
+# Secrets are injected at runtime by Compose and must never be baked into the image.
+.env
+.env.*
+!.env.example
+
+.git
+.venv
+venv
+**/__pycache__
+**/*.py[cod]
+*.egg-info
+.pytest_cache
+.ruff_cache
+.mypy_cache
+build
+dist
+tmp
+
+# Generated artifacts are rebuilt inside the ingestion container.
+data/processed/*
+data/review/*

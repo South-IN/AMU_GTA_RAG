@@ -30,6 +30,8 @@ amu-evaluate-retrieval = "amu_admissions_rag.evaluate_retrieval_cli:main"
 amu-answer = "amu_admissions_rag.answer_cli:main"
 amu-evaluate-generation = "amu_admissions_rag.generation_eval_cli:main"
 amu-export-review = "amu_admissions_rag.review_cli:main"
+amu-migrate = "amu_admissions_rag.migrate_cli:main"
+amu-pipeline = "amu_admissions_rag.pipeline_cli:main"
 
 
 [project.optional-dependencies]

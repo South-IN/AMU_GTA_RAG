@@ -18,11 +18,10 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--courses", type=Path, help="Reviewed course-corpus JSON")
     parser.add_argument("--policies", type=Path, help="Reviewed policy-corpus JSON")
     parser.add_argument(
-        "--schema",
-        type=Path,
-        help="Schema migration; used only with --apply-schema",
+        "--apply-schema",
+        action="store_true",
+        help="Apply pending numbered migrations from sql/ before loading",
     )
-    parser.add_argument("--apply-schema", action="store_true")
     parser.add_argument(
         "--allow-empty",
         action="store_true",
@@ -46,13 +45,12 @@ def main() -> None:
         args.policies
         or paths.review_dir / "guide-2026-27.policy-corpus.pending.json"
     )
-    schema_path = args.schema or paths.project_root / "sql" / "001_retrieval_schema.sql"
 
     courses = CourseCorpus.model_validate_json(course_path.read_text(encoding="utf-8"))
     policies = PolicyCorpus.model_validate_json(policy_path.read_text(encoding="utf-8"))
     store = PostgresIndexStore(database_url)
     if args.apply_schema:
-        store.apply_schema(schema_path)
+        store.apply_migrations(paths.project_root / "sql")
     count = store.replace_approved_corpus(
         courses,
         policies,

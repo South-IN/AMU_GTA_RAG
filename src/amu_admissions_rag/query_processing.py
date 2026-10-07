@@ -64,7 +64,11 @@ COURSE_ALIASES: tuple[CourseAlias, ...] = (
 INTENT_RULES: tuple[tuple[QueryIntent, re.Pattern[str], tuple[str, ...]], ...] = (
     (
         QueryIntent.ELIGIBILITY,
-        re.compile(r"\b(?:eligible|eligibility|qualify|qualification|requirement)\b", re.I),
+        re.compile(
+            r"\b(?:eligible|eligibility|qualif(?:y|ies|ied|ication)|"
+            r"require(?:s|d|ments?)?)\b|\bapply(?:ing)?\s+for\b",
+            re.I,
+        ),
         ("qualifying_examination",),
     ),
     (
@@ -94,7 +98,7 @@ INTENT_RULES: tuple[tuple[QueryIntent, re.Pattern[str], tuple[str, ...]], ...] =
     ),
     (
         QueryIntent.DURATION,
-        re.compile(r"\b(?:duration|semesters?|years? long)\b", re.I),
+        re.compile(r"\b(?:duration|semesters?|years? long|how\s+long)\b", re.I),
         ("course_details",),
     ),
     (

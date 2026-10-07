@@ -218,5 +218,6 @@
 - Abbreviation punctuation is removed without consuming surrounding sentence punctuation
 - Unrelated capitalization, spacing and punctuation remain unchanged
 - Eligibility and multi-intent questions select the expected preferred fields
+- Evaluation follow-up recognizes `apply for` and subject requirements as eligibility, and `how long` as duration
 - The reviewed sample still builds 190 approved retrieval chunks after name enrichment
-- The complete test suite passes 56 tests
+- The complete test suite passes 59 tests

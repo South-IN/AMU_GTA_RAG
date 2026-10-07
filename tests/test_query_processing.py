@@ -70,6 +70,25 @@ class QueryProcessorTests(unittest.TestCase):
             ["age_limit", "test_schedule"],
         )
 
+    def test_apply_for_is_an_eligibility_intent(self) -> None:
+        analysis = self.processor.analyze("Can a B.Com graduate apply for MCA?")
+
+        self.assertIn(QueryIntent.ELIGIBILITY, analysis.intents)
+        self.assertEqual(analysis.preferred_fields, ["qualifying_examination"])
+
+    def test_subject_requirement_is_an_eligibility_intent(self) -> None:
+        analysis = self.processor.analyze(
+            "Does chemical engineering require maths?"
+        )
+
+        self.assertIn(QueryIntent.ELIGIBILITY, analysis.intents)
+
+    def test_how_long_is_a_duration_intent(self) -> None:
+        analysis = self.processor.analyze("How long is B.E.?")
+
+        self.assertIn(QueryIntent.DURATION, analysis.intents)
+        self.assertEqual(analysis.preferred_fields, ["course_details"])
+
     def test_query_without_known_intent_is_general(self) -> None:
         analysis = self.processor.analyze("Tell me about MBA")
 

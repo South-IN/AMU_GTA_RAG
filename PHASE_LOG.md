@@ -112,3 +112,38 @@
 - Cross-page regression tests recover the Community Science third note and the B.A. (Hons.) English eligibility continuation
 - Boundary tests prevent new sections and non-consecutive page selections from being merged into preceding courses
 - Full-corpus comparison retained all 179 record IDs, 180 tables and 372 table rows with no non-field changes
+
+## Phase 5: Policy and Appendix Corpus
+
+**Status:** Complete
+**Date:** 2026-10-07
+
+### Changes
+
+- Added heading-aware policy chunking for required non-course pages
+- Added normalized records for the application summary, test schedule and fee summary appendices
+- Added forward-fill tracking for visually merged application and schedule cells
+- Added multi-paper test-schedule continuation handling
+- Added programme-group, faculty, physical-page and printed-page provenance
+- Added a CLI that builds the complete pending policy corpus from the full extraction
+- Normalized split initial-letter artifacts in appendix course names
+- Distinguished external application methods such as NEET from processing charges
+
+### Decisions
+
+- Keep every policy chunk within one physical page so citations remain exact
+- Cap policy chunks at 300 words and split first at detected headings
+- Store each appendix course row as an independently reviewable record
+- Mark forward-filled appendix values as inherited and retain the originating source page
+- Keep all newly generated policy and appendix records pending human review
+- Treat the reported course verification as a completed project checkpoint without inventing reviewer identity or approval timestamps in the corpus
+
+### Validation
+
+- The full run produced 154 policy chunks across every required narrative/form page
+- The appendices produced 480 application rows, 328 test-schedule rows and 582 fee rows
+- All 1,544 generated record IDs are unique and all records remain in pending state
+- No generated appendix record has an empty value set or missing programme-group context
+- Repeated guide headers do not appear in policy chunk text
+- Regression tests cover merged application values, NEET application methods, deferred dates, multi-paper schedules, inherited schedules, fees and extraction spacing artifacts
+- The complete test suite passes 32 tests

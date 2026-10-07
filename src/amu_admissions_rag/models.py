@@ -29,6 +29,12 @@ class ProgramLevel(str, Enum):
     OTHER = "other"
 
 
+class AppendixType(str, Enum):
+    APPLICATION_SUMMARY = "application_summary"
+    TEST_SCHEDULE = "test_schedule"
+    FEE_SUMMARY = "fee_summary"
+
+
 class BoundingBox(BaseModel):
     x0: float = Field(ge=0)
     top: float = Field(ge=0)
@@ -118,6 +124,27 @@ class SectionRecord(BaseModel):
     review: ReviewMetadata = Field(default_factory=ReviewMetadata)
 
 
+class AppendixCell(BaseModel):
+    text: NonEmptyText
+    inherited: bool = False
+    source: SourceReference
+
+
+class AppendixRecord(BaseModel):
+    record_id: NonEmptyText
+    document_id: NonEmptyText
+    appendix_type: AppendixType
+    serial_number: NonEmptyText
+    course_name: NonEmptyText
+    source: SourceReference
+    course_code: str | None = None
+    category: str | None = None
+    programme_group: str | None = None
+    faculty: str | None = None
+    values: dict[str, AppendixCell] = Field(default_factory=dict)
+    review: ReviewMetadata = Field(default_factory=ReviewMetadata)
+
+
 class ExtractedTextLine(BaseModel):
     text: NonEmptyText
     bounding_box: BoundingBox
@@ -150,3 +177,8 @@ class CourseCorpus(BaseModel):
     document: DocumentRecord
     courses: list[CourseRecord]
 
+
+class PolicyCorpus(BaseModel):
+    document: DocumentRecord
+    sections: list[SectionRecord]
+    appendix_rows: list[AppendixRecord]

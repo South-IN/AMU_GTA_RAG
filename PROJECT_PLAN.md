@@ -61,6 +61,8 @@ Extract and preserve:
 - Store reviewer, review time and correction notes
 - Index only approved records and chunks
 
+The initial 15-course validation checkpoint has been completed by the project team. Policy chunks and appendix rows use the same pending/approved/rejected workflow and are kept out of retrieval until approved.
+
 ## Query Processing
 
 Preserve the original query and create an expanded copy for retrieval.

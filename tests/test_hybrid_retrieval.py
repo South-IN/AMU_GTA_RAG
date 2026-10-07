@@ -8,6 +8,8 @@ from amu_admissions_rag.models import (
     CourseCorpus,
     CourseField,
     CourseRecord,
+    CourseTable,
+    CourseTableCell,
     DocumentRecord,
     PolicyCorpus,
     ProgramLevel,
@@ -58,6 +60,28 @@ class HybridRetrievalTests(unittest.TestCase):
                     value="Not more than 27 years.",
                     source=mca_source,
                 ),
+            ],
+            tables=[
+                CourseTable(
+                    name="course_details",
+                    headers=["branch_name", "intake"],
+                    rows=[
+                        {
+                            "branch_name": CourseTableCell(
+                                text="Computer Applications", source=mca_source
+                            ),
+                            "intake": CourseTableCell(text="40", source=mca_source),
+                        },
+                        {
+                            "branch_name": CourseTableCell(
+                                text="Computer Applications (Data Science)",
+                                source=mca_source,
+                            ),
+                            "intake": CourseTableCell(text="20", source=mca_source),
+                        },
+                    ],
+                    source=mca_source,
+                )
             ],
             review=approved,
         )
@@ -123,6 +147,15 @@ class HybridRetrievalTests(unittest.TestCase):
 
         self.assertEqual(response.hits[0].chunk.parent_record_id, self.mba.record_id)
         self.assertEqual(response.hits[0].chunk.field_name, "selection_process")
+
+    def test_exact_structured_value_breaks_similar_table_row_tie(self) -> None:
+        response = self.retriever.search(
+            "How many Computer Applications seats are there?",
+            limit=2,
+        )
+
+        self.assertIn("Branch Name: Computer Applications\n", response.hits[0].chunk.text)
+        self.assertGreater(response.hits[0].exact_value_boost, 0)
 
 
 if __name__ == "__main__":

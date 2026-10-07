@@ -14,7 +14,7 @@ from amu_admissions_rag.models import (
     RetrievalResponse,
 )
 from amu_admissions_rag.query_processing import QueryProcessor
-from amu_admissions_rag.retrieval.bm25 import BM25Index
+from amu_admissions_rag.retrieval.bm25 import BM25Index, tokenize
 from amu_admissions_rag.retrieval.embedding import (
     EmbeddingProvider,
     HashingEmbeddingProvider,
@@ -64,7 +64,7 @@ class HybridRetriever:
         vector_ranks = {index: rank for rank, index in enumerate(vector_order, start=1)}
 
         candidate_indexes = set(lexical_order) | set(vector_order)
-        scored: list[tuple[float, int, float]] = []
+        scored: list[tuple[float, int, float, float]] = []
         for index in candidate_indexes:
             fused_score = 0.0
             if index in lexical_ranks:
@@ -76,7 +76,18 @@ class HybridRetriever:
             if chunk.field_name in analysis.preferred_fields:
                 intent_boost = 1.25 / (self.rrf_k + 1)
                 fused_score += intent_boost
-            scored.append((fused_score, index, intent_boost))
+            exact_value_boost = 0.0
+            field_is_relevant = (
+                not analysis.preferred_fields
+                or chunk.field_name in analysis.preferred_fields
+            )
+            if field_is_relevant and self._has_exact_structured_value(
+                analysis.expanded_query,
+                chunk.text,
+            ):
+                exact_value_boost = 0.5 / (self.rrf_k + 1)
+                fused_score += exact_value_boost
+            scored.append((fused_score, index, intent_boost, exact_value_boost))
 
         scored.sort(
             key=lambda item: (
@@ -88,7 +99,7 @@ class HybridRetriever:
         )
         hits: list[RetrievalHit] = []
         hydrated: dict[str, CourseRecord] = {}
-        for fused_score, index, intent_boost in scored[:limit]:
+        for fused_score, index, intent_boost, exact_value_boost in scored[:limit]:
             chunk = self.index_corpus.chunks[index]
             hits.append(
                 RetrievalHit(
@@ -99,6 +110,7 @@ class HybridRetriever:
                     lexical_rank=lexical_ranks.get(index),
                     vector_rank=vector_ranks.get(index),
                     intent_boost=intent_boost,
+                    exact_value_boost=exact_value_boost,
                 )
             )
             parent = self.course_parents.get(chunk.parent_record_id)
@@ -110,6 +122,31 @@ class HybridRetriever:
             course_parents=hydrated,
             embedding_provider=self.embedding_provider.name,
         )
+
+    @staticmethod
+    def _has_exact_structured_value(query: str, chunk_text: str) -> bool:
+        normalized_query = " ".join(tokenize(query))
+        context_keys = {
+            "course",
+            "expanded course name",
+            "faculty",
+            "programme level",
+            "record type",
+            "field",
+            "table",
+            "table row",
+        }
+        for line in chunk_text.splitlines():
+            if ":" not in line:
+                continue
+            key, value = line.split(":", 1)
+            if " ".join(tokenize(key)) in context_keys:
+                continue
+            value = value.strip()
+            normalized_value = " ".join(tokenize(value))
+            if normalized_value and normalized_value in normalized_query:
+                return True
+        return False
 
     @staticmethod
     def _rank(

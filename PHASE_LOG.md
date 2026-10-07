@@ -250,8 +250,9 @@
 
 ### Validation
 
-- The complete test suite passes 64 tests
+- The complete test suite passes 65 tests
 - Deterministic vector generation, BM25/RRF ranking, field boosts and parent hydration have regression coverage
+- Exact structured-value matching resolves close branch and specialization ranking ties
 - The approved corpus rebuild still contains 190 chunks
 - The varied retrieval evaluation passes 16/16 cases at top-5
 - The evaluation covers eligibility, age, selection, tests, test centres and intake/table-row queries

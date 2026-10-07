@@ -8,7 +8,7 @@ Phase 8 provides a runnable retrieval path over the approved corpus.
 2. Detect intent and produce soft field preferences.
 3. Search the same self-contained chunks with BM25 and vector similarity.
 4. Fuse both ranked lists with Reciprocal Rank Fusion (RRF).
-5. Add a small soft boost when a chunk matches the requested field.
+5. Add small soft boosts for a requested field and exact structured values such as branch names or course codes.
 6. Return source-page provenance and hydrate linked course parents.
 
 Parent hydration happens after retrieval. It gives the application the complete reviewed course record and sibling fields while the retrieved child remains the cited evidence.

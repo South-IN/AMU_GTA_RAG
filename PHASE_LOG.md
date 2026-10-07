@@ -407,3 +407,21 @@
 - 110 tests pass
 - Known remainder: the page-37 course-type key sits under "Refund of fee" because the contents page does not list it
 
+## Phase 13: Fresh Corpus
+
+**Status:** Complete
+**Date:** 2026-10-08
+
+### Changes
+
+- Removed the `reviews/2026-10-07-course-sample.json` approval batch; no record is approved and the approved index is empty
+- Deleted all generated artifacts and both Docker volumes (database and pipeline data), then rebuilt the pending corpus from the PDF
+- The pipeline loads an empty corpus when the database holds no approved chunks, so a fresh stack starts; it still refuses to empty a populated index unless `--allow-empty` is passed
+- The sidebar shows the live approved coverage instead of a fixed "15 reviewed courses"
+
+### Validation
+
+- Fresh stack: migrations applied to a new database, 189 courses, 114 policy chunks and 1,390 appendix rows parsed, all pending, and 0 approved chunks loaded
+- With nothing approved, the assistant answers that the guide evidence is insufficient without calling the model
+- The retrieval evaluations need the 15 sample courses approved and fail until then
+

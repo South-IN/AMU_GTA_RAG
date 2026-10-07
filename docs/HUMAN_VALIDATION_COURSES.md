@@ -2,6 +2,8 @@
 
 These 15 courses cover different faculties, programme categories, layouts and table structures.
 
+**Status:** pending. All earlier approvals were removed on 2026-10-08 so the corpus could start fresh; none of these courses is approved yet.
+
 | # | Course | Category | Faculty | Physical page | Printed page | Validation focus |
 |---|---|---|---|---:|---|---|
 | 1 | B.Sc. (Hons.) Agriculture | Undergraduate | Agricultural Sciences | 54 | A.1 | Eligibility, intake and additional fee |

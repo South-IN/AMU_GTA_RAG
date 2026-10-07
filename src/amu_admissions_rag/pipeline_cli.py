@@ -29,6 +29,11 @@ def build_parser() -> argparse.ArgumentParser:
         help="Rebuild and reload even if the inputs are unchanged since the last load",
     )
     parser.add_argument(
+        "--allow-empty",
+        action="store_true",
+        help="Replace a populated database corpus even when nothing is approved",
+    )
+    parser.add_argument(
         "--no-database",
         action="store_true",
         help=f"Write local JSON artifacts only, even if {DATABASE_URL_ENV} is set",
@@ -45,6 +50,7 @@ def main() -> None:
         database_url=database_url,
         reviews_dir=args.reviews_dir or paths.project_root / "reviews",
         force=args.force,
+        allow_empty=args.allow_empty,
     )
 
 

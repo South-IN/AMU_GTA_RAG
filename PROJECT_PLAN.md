@@ -62,7 +62,7 @@ Each course chunk contains its canonical identity, every narrative field, every 
 - Store reviewer, review time and correction notes
 - Index only approved records and chunks
 
-The initial 15-course validation checkpoint has been completed by the project team. Policy chunks and appendix rows use the same pending/approved/rejected workflow and are kept out of retrieval until approved.
+The corpus starts fresh: every course, policy chunk and appendix row is pending until a reviewer approves it in a batch under `reviews/`. The 15 courses in [docs/HUMAN_VALIDATION_COURSES.md](docs/HUMAN_VALIDATION_COURSES.md) are the first review target.
 
 ## Query Processing
 

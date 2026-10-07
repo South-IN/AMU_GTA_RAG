@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import html
 import sys
+from collections import Counter
 from pathlib import Path
 
 import streamlit as st
@@ -16,6 +17,7 @@ if str(SRC_ROOT) not in sys.path:
 
 from amu_admissions_rag.assistant import AdmissionsAssistant, AssistantReply
 from amu_admissions_rag.config import AppPaths
+from amu_admissions_rag.corpus import load_approved_corpora
 from amu_admissions_rag.presentation import context_preview, link_answer_citations
 
 
@@ -90,6 +92,35 @@ def load_assistant() -> AdmissionsAssistant:
     return AdmissionsAssistant.from_project()
 
 
+@st.cache_data(ttl=60, show_spinner=False)
+def approved_coverage() -> dict[str, int] | None:
+    try:
+        index, _ = load_approved_corpora()
+    except Exception:
+        return None
+    counts = Counter(chunk.chunk_type.value for chunk in index.chunks)
+    return {
+        "courses": counts["course_overview"],
+        "policy": counts["policy_section"],
+        "appendix": counts["appendix_row"],
+    }
+
+
+def coverage_text(coverage: dict[str, int] | None) -> str:
+    if coverage is None:
+        return "Approved coverage could not be loaded."
+    if not any(coverage.values()):
+        return (
+            "No guide records have been approved yet. Answers become available as "
+            "reviewers approve content."
+        )
+    return (
+        f"{coverage['courses']} courses, {coverage['policy']} policy sections and "
+        f"{coverage['appendix']} appendix rows are approved and searchable. "
+        "Coverage grows as more records are approved."
+    )
+
+
 def render_sources(reply: AssistantReply) -> None:
     if not reply.hits:
         return
@@ -132,7 +163,7 @@ with st.sidebar:
     st.caption("Guide to Admissions 2026–27")
     st.markdown(
         '<div class="coverage-note"><strong>Validated coverage</strong><br>'
-        "15 reviewed courses are currently searchable. The interface expands automatically as more records are approved.</div>",
+        f"{html.escape(coverage_text(approved_coverage()))}</div>",
         unsafe_allow_html=True,
     )
     st.markdown("---")

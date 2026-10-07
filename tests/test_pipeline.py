@@ -8,8 +8,20 @@ from unittest import mock
 
 from amu_admissions_rag.config import AppPaths
 from amu_admissions_rag.corpus import load_approved_corpora
-from amu_admissions_rag.models import ReviewBatch, ReviewDecision, ReviewStatus
-from amu_admissions_rag.pipeline import ingestion_fingerprint, load_review_batches
+from amu_admissions_rag.models import (
+    CourseCorpus,
+    DocumentRecord,
+    ExtractedDocument,
+    PolicyCorpus,
+    ReviewBatch,
+    ReviewDecision,
+    ReviewStatus,
+)
+from amu_admissions_rag.pipeline import (
+    ingestion_fingerprint,
+    load_review_batches,
+    run_pipeline,
+)
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 
@@ -69,6 +81,72 @@ class PipelineTests(unittest.TestCase):
                 ("index", "courses"),
             )
         store.assert_called_once_with("postgresql://db")
+
+
+class EmptyCorpusGuardTests(unittest.TestCase):
+    """A fresh guide with no approvals loads; emptying a populated index does not."""
+
+    def setUp(self) -> None:
+        directory = Path(tempfile.mkdtemp())
+        self.addCleanup(shutil.rmtree, directory)
+        (directory / "reviews").mkdir()
+        self.paths = AppPaths(project_root=directory)
+        document = DocumentRecord(
+            document_id="guide",
+            filename="guide.pdf",
+            academic_year="2026-27",
+            sha256="a" * 64,
+            total_pages=1,
+        )
+        extractor = mock.Mock()
+        extractor.document_record.return_value = document
+        extractor.extract_pages.return_value = ExtractedDocument(document=document, pages=[])
+        self.store = mock.Mock()
+        self.store.apply_migrations.return_value = []
+        self.store.latest_ingestion_fingerprint.return_value = None
+        self.store.replace_approved_corpus.return_value = 0
+        patches = [
+            mock.patch("amu_admissions_rag.pipeline.PdfExtractor", return_value=extractor),
+            mock.patch("amu_admissions_rag.pipeline.PostgresIndexStore", return_value=self.store),
+            mock.patch("amu_admissions_rag.pipeline.ingestion_fingerprint", return_value="f" * 64),
+            mock.patch(
+                "amu_admissions_rag.pipeline.CourseParser.parse",
+                return_value=CourseCorpus(document=document, courses=[]),
+            ),
+            mock.patch(
+                "amu_admissions_rag.pipeline.PolicyParser.parse",
+                return_value=PolicyCorpus(document=document, sections=[], appendix_rows=[]),
+            ),
+        ]
+        for patch in patches:
+            patch.start()
+            self.addCleanup(patch.stop)
+
+    def _run(self, **kwargs: bool) -> None:
+        run_pipeline(
+            paths=self.paths,
+            database_url="postgresql://db",
+            reviews_dir=self.paths.project_root / "reviews",
+            log=lambda message: None,
+            **kwargs,
+        )
+
+    def test_fresh_database_accepts_an_empty_corpus(self) -> None:
+        self.store.approved_chunk_count.return_value = 0
+
+        self._run()
+
+        self.store.replace_approved_corpus.assert_called_once()
+
+    def test_populated_database_is_not_emptied_by_accident(self) -> None:
+        self.store.approved_chunk_count.return_value = 15
+
+        with self.assertRaisesRegex(RuntimeError, "Refusing to empty"):
+            self._run()
+        self.store.replace_approved_corpus.assert_not_called()
+
+        self._run(allow_empty=True)
+        self.store.replace_approved_corpus.assert_called_once()
 
 
 if __name__ == "__main__":

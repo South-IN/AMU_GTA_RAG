@@ -77,6 +77,7 @@ def run_pipeline(
     database_url: str | None,
     reviews_dir: Path,
     force: bool = False,
+    allow_empty: bool = False,
     log=print,
 ) -> PipelineResult:
     extractor = PdfExtractor(paths.source_pdf)
@@ -140,9 +141,19 @@ def run_pipeline(
             skipped=False, fingerprint=fingerprint, approved_chunks=len(index.chunks)
         )
 
+    if not index.chunks and not allow_empty:
+        existing = store.approved_chunk_count(document.document_id)
+        if existing:
+            raise RuntimeError(
+                f"No records are approved, but the database holds {existing} approved "
+                "chunk(s) for this guide. Refusing to empty it; check reviews/ or rerun "
+                "with --allow-empty."
+            )
+        log("No records are approved yet; loading an empty corpus until review is done.")
     loaded = store.replace_approved_corpus(
         courses,
         policies,
+        allow_empty=True,
         ingestion=IngestionRun(
             fingerprint=fingerprint,
             pipeline_version=pipeline_version(),

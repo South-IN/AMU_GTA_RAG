@@ -124,7 +124,7 @@ def main() -> None:
             "",
             f"Model: `{model}`  ",
             f"Cases: {len(EVALUATION_CASES)}  ",
-            "Corpus: 15-course human-approved validation checkpoint",
+            "Corpus: human-approved records only",
             "",
             "Each case records the exact query, expanded query, retrieved context and LLM answer.",
             "",

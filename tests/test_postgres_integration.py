@@ -143,6 +143,7 @@ class PostgresIntegrationTests(unittest.TestCase):
         self.assertEqual([c.record_id for c in stored_courses.courses], ["it:mca"])
         self.assertEqual(stored_courses.courses[0], courses.courses[0])
         self.assertEqual(self.store.latest_ingestion_fingerprint(DOCUMENT_ID), "d" * 64)
+        self.assertEqual(self.store.approved_chunk_count(DOCUMENT_ID), 3)
 
     def test_reload_replaces_previous_corpus_atomically(self) -> None:
         courses, policies = _corpora()

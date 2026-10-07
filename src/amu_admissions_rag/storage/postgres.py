@@ -65,6 +65,15 @@ class PostgresIndexStore:
             ).fetchone()
         return row[0] if row else None
 
+    def approved_chunk_count(self, document_id: str) -> int:
+        psycopg, _ = self._driver()
+        with psycopg.connect(self.database_url) as connection:
+            row = connection.execute(
+                "SELECT count(*) FROM retrieval_chunks WHERE document_id = %s",
+                (document_id,),
+            ).fetchone()
+        return int(row[0])
+
     def replace_approved_corpus(
         self,
         course_corpus: CourseCorpus,

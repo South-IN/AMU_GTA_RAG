@@ -50,7 +50,7 @@ $env:PYTHONPATH = "src"
   --output data/processed/phase8-course-discovery-evaluation.json
 ```
 
-The checked-in evaluation questions cover all 15 approved sample courses. Generated reports store each query, its expanded form, the complete retrieved chunk text, rank, score and source pages. Reports stay outside Git with the other processed artifacts.
+The checked-in evaluation questions cover the 15 courses in the human-validation sample, so they only pass once those courses are approved. Generated reports store each query, its expanded form, the complete retrieved chunk text, rank, score and source pages. Reports stay outside Git with the other processed artifacts.
 
 ## MVP decisions
 

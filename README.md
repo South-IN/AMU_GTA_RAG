@@ -27,14 +27,14 @@ Open <http://127.0.0.1:8501>. Compose starts three containers:
 
 ## Human review
 
-Extracted records start as `pending`. Approvals are applied from auditable review batches in `reviews/`, never by editing corpus JSON. Only approved records are indexed, and the database rejects any retrieval chunk that is not approved. To publish new approvals, add a batch file and run `docker compose up -d --build`.
+Extracted records start as `pending`, and the corpus currently has no approvals: the assistant has nothing to answer from until a review batch is added. Approvals are applied from auditable review batches in `reviews/`, never by editing corpus JSON. Only approved records are indexed, and the database rejects any retrieval chunk that is not approved. To publish new approvals, add a batch file and run `docker compose up -d --build`.
 
 A single batch can also be applied manually:
 
 ```bash
 amu-apply-review --kind courses \
   --input data/review/guide-2026-27.course-corpus.pending.json \
-  --decisions reviews/2026-10-07-course-sample.json \
+  --decisions reviews/<your-review-batch>.json \
   --output data/review/guide-2026-27.course-corpus.reviewed.json
 ```
 

@@ -80,6 +80,31 @@ class ReviewMetadata(BaseModel):
         return self
 
 
+class ReviewDecision(BaseModel):
+    record_id: NonEmptyText
+    status: ReviewStatus
+    notes: str | None = None
+
+    @model_validator(mode="after")
+    def reject_pending_decision(self) -> "ReviewDecision":
+        if self.status is ReviewStatus.PENDING:
+            raise ValueError("review decisions must approve or reject a record")
+        return self
+
+
+class ReviewBatch(BaseModel):
+    reviewer: NonEmptyText
+    reviewed_at: datetime
+    decisions: list[ReviewDecision] = Field(min_length=1)
+
+    @model_validator(mode="after")
+    def reject_duplicate_record_ids(self) -> "ReviewBatch":
+        record_ids = [decision.record_id for decision in self.decisions]
+        if len(record_ids) != len(set(record_ids)):
+            raise ValueError("review decisions contain duplicate record IDs")
+        return self
+
+
 class DocumentRecord(BaseModel):
     document_id: NonEmptyText
     filename: NonEmptyText

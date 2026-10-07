@@ -1,0 +1,81 @@
+{
+  "reviewer": "project-owner",
+  "reviewed_at": "2026-10-07T12:04:19Z",
+  "decisions": [
+    {
+      "record_id": "amu-guide-2026-27:54:1:b-sc-hons-agriculture-under-self-financing-scheme",
+      "status": "approved",
+      "notes": "Validated as part of the 15-course human-review sample."
+    },
+    {
+      "record_id": "amu-guide-2026-27:55:2:b-a-hons",
+      "status": "approved",
+      "notes": "Validated using the English major row in the shared B.A. (Hons.) layout."
+    },
+    {
+      "record_id": "amu-guide-2026-27:56:2:b-com-hons",
+      "status": "approved",
+      "notes": "Validated as part of the 15-course human-review sample."
+    },
+    {
+      "record_id": "amu-guide-2026-27:57:2:bachelor-of-technology-b-tech",
+      "status": "approved",
+      "notes": "Validated using the Computer Engineering row in the shared B.Tech. layout."
+    },
+    {
+      "record_id": "amu-guide-2026-27:61:1:b-a-ll-b",
+      "status": "approved",
+      "notes": "Validated as part of the 15-course human-review sample."
+    },
+    {
+      "record_id": "amu-guide-2026-27:62:1:m-b-b-s",
+      "status": "approved",
+      "notes": "Validated as part of the 15-course human-review sample."
+    },
+    {
+      "record_id": "amu-guide-2026-27:69:1:kamil-e-tib-o-jarahat-bums",
+      "status": "approved",
+      "notes": "Validated as part of the 15-course human-review sample."
+    },
+    {
+      "record_id": "amu-guide-2026-27:70:1:m-sc-ag-microbiology",
+      "status": "approved",
+      "notes": "Validated as part of the 15-course human-review sample."
+    },
+    {
+      "record_id": "amu-guide-2026-27:80:2:master-of-technology-m-tech-computer-science-engineering",
+      "status": "approved",
+      "notes": "Validated as part of the 15-course human-review sample."
+    },
+    {
+      "record_id": "amu-guide-2026-27:90:1:master-of-business-administration-mba",
+      "status": "approved",
+      "notes": "Validated as part of the 15-course human-review sample."
+    },
+    {
+      "record_id": "amu-guide-2026-27:94:2:master-of-computer-science-and-applications-mca",
+      "status": "approved",
+      "notes": "Validated as part of the 15-course human-review sample."
+    },
+    {
+      "record_id": "amu-guide-2026-27:104:2:master-of-social-work-m-s-w",
+      "status": "approved",
+      "notes": "Validated as part of the 15-course human-review sample."
+    },
+    {
+      "record_id": "amu-guide-2026-27:107:1:ph-d",
+      "status": "approved",
+      "notes": "Validated using the Computer Science row in the shared Ph.D. table."
+    },
+    {
+      "record_id": "amu-guide-2026-27:110:1:diploma-in-engineering",
+      "status": "approved",
+      "notes": "Validated as part of the 15-course human-review sample."
+    },
+    {
+      "record_id": "amu-guide-2026-27:113:1:senior-secondary-school-certificate",
+      "status": "approved",
+      "notes": "Validated using the Science Stream in the shared school-certificate layout."
+    }
+  ]
+}

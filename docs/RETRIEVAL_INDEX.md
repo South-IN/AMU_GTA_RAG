@@ -12,6 +12,8 @@ Phase 6 converts reviewed records into self-contained retrieval chunks and defin
 - `--include-pending` creates a local preview only.
 - PostgreSQL rejects any retrieval chunk whose review state is not `approved`.
 
+Review decisions are stored in auditable batch files containing the reviewer, timestamp, record ID, decision and notes. `amu-apply-review` applies a batch without changing unrelated records.
+
 ## Chunk Contract
 
 Every course child contains enough text to be found without first loading its parent:
@@ -101,6 +103,8 @@ python -m amu_admissions_rag.load_index_cli --apply-schema
 ```
 
 The loader performs an atomic replacement scoped to one document and refuses an empty approved corpus unless `--allow-empty` is explicitly supplied.
+
+The current reviewed 15-course batch produces 190 approved course chunks. Policy and appendix records remain pending and are excluded until their own review batches are applied.
 
 ## Deferred Decisions
 

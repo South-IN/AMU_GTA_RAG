@@ -33,5 +33,15 @@ $env:PYTHONPATH = "src"
 
 Use `--include-pending` only for a local chunk preview. PostgreSQL loading requires approved records and `AMU_RAG_DATABASE_URL`; see [docs/RETRIEVAL_INDEX.md](docs/RETRIEVAL_INDEX.md).
 
+Human approvals are applied from an auditable review batch rather than by editing corpus JSON manually:
+
+```powershell
+& $python -m amu_admissions_rag.apply_review_cli `
+  --kind courses `
+  --input data/review/guide-2026-27.course-corpus.pending.json `
+  --decisions reviews/2026-10-07-course-sample.json `
+  --output data/review/guide-2026-27.course-corpus.reviewed.json
+```
+
 See [PROJECT_PLAN.md](PROJECT_PLAN.md) for the full architecture and
 [PHASE_LOG.md](PHASE_LOG.md) for implementation history.

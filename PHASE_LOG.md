@@ -163,6 +163,7 @@
 - Added generated full-text vectors, GIN indexes and pgvector storage
 - Added Reciprocal Rank Fusion for combined full-text and vector ranking
 - Added an atomic PostgreSQL loader scoped to one guide document
+- Added auditable review batches and a CLI for applying reviewer decisions
 - Added retrieval-index architecture and operating documentation
 
 ### Decisions
@@ -180,7 +181,10 @@
 - The full pending preview contains 2,960 unique chunks
 - Preview composition is 179 course overviews, 865 course fields, 372 course table rows, 154 policy sections and 1,390 appendix rows
 - All 1,416 course chunks contain course context and a parent record ID
-- The approved-only build contains zero chunks because approval audit fields have not yet been written to the source corpora
+- Recorded the project owner's 15-course validation sample with reviewer, timestamp and notes
+- The approved-only build contains 190 chunks across 15 reviewed course records
+- Policy and appendix records remain pending and are excluded from the approved index
 - The empty-corpus guard prevents accidental deletion of an existing database index
 - Tests cover self-contained content, persisted parent links, approval gating, PostgreSQL constraints and RRF structure
-- The complete test suite passes 44 tests
+- The complete test suite passes 47 tests
+- Live PostgreSQL loading was not run because the available local server requires unavailable credentials and does not have pgvector installed

@@ -17,6 +17,11 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--courses", type=Path, help="Reviewed course-corpus JSON")
     parser.add_argument("--limit", type=int, default=5, help="Number of hits to return")
     parser.add_argument("--json", action="store_true", help="Print the complete JSON result")
+    parser.add_argument(
+        "--discover-courses",
+        action="store_true",
+        help="Rank course profiles and attach focused evidence per course",
+    )
     return parser
 
 
@@ -27,10 +32,30 @@ def main() -> None:
     course_path = args.courses or paths.review_dir / "guide-2026-27.course-corpus.reviewed.json"
     index_corpus = IndexCorpus.model_validate_json(index_path.read_text(encoding="utf-8"))
     course_corpus = CourseCorpus.model_validate_json(course_path.read_text(encoding="utf-8"))
-    response = HybridRetriever(index_corpus, course_corpus).search(
-        args.query,
-        limit=args.limit,
-    )
+    retriever = HybridRetriever(index_corpus, course_corpus)
+    if args.discover_courses:
+        response = retriever.discover_courses(args.query, limit=args.limit)
+        if args.json:
+            print(response.model_dump_json(indent=2))
+            return
+        print(f"Original: {response.query.original_query}")
+        print(f"Retrieval query: {response.query.expanded_query}")
+        print(f"Intents: {', '.join(intent.value for intent in response.query.intents)}")
+        print(f"Vector provider: {response.embedding_provider}")
+        for rank, candidate in enumerate(response.candidates, start=1):
+            print(f"\n{rank}. {candidate.course.course_name} [score {candidate.score:.5f}]")
+            for evidence in candidate.evidence:
+                source = evidence.chunk.source
+                page = source.printed_page or str(source.physical_page)
+                print(
+                    f"   Evidence: {evidence.chunk.title} "
+                    f"[page {page}; {evidence.chunk.field_name or evidence.chunk.chunk_type.value}]"
+                )
+                evidence_text = evidence.chunk.text.split("\n\n", 1)[-1]
+                print(f"   {evidence_text}")
+        return
+
+    response = retriever.search(args.query, limit=args.limit)
     if args.json:
         print(response.model_dump_json(indent=2))
         return

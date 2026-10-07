@@ -51,7 +51,10 @@ class HybridRetrievalTests(unittest.TestCase):
                 CourseField(
                     name="qualifying_examination",
                     label="Qualifying Examination",
-                    value="Bachelor degree with Mathematics and at least 55% marks.",
+                    value=(
+                        "B.Sc. Computer Science with Mathematics, at least "
+                        "16 Mathematics credits and 55% marks."
+                    ),
                     source=mca_source,
                 ),
                 CourseField(
@@ -102,9 +105,26 @@ class HybridRetrievalTests(unittest.TestCase):
             ],
             review=approved,
         )
+        self.bsc = CourseRecord(
+            record_id="course:bsc",
+            document_id="guide",
+            course_name="B.Sc. (Hons.) Computer Science",
+            program_level=ProgramLevel.UNDERGRADUATE,
+            faculty="Faculty of Science",
+            source=mba_source,
+            fields=[
+                CourseField(
+                    name="qualifying_examination",
+                    label="Qualifying Examination",
+                    value="Senior Secondary School Certificate with Mathematics.",
+                    source=mba_source,
+                )
+            ],
+            review=approved,
+        )
         course_corpus = CourseCorpus(
             document=self.document,
-            courses=[self.mca, self.mba],
+            courses=[self.mca, self.mba, self.bsc],
         )
         policy_corpus = PolicyCorpus(
             document=self.document,
@@ -156,6 +176,36 @@ class HybridRetrievalTests(unittest.TestCase):
 
         self.assertIn("Branch Name: Computer Applications\n", response.hits[0].chunk.text)
         self.assertGreater(response.hits[0].exact_value_boost, 0)
+
+    def test_course_discovery_ranks_profiles_and_attaches_field_evidence(self) -> None:
+        response = self.retriever.discover_courses(
+            "I completed B.Sc. Computer Science. Which courses am I eligible for?",
+            limit=2,
+        )
+
+        self.assertEqual(response.candidates[0].course.record_id, self.mca.record_id)
+        self.assertGreater(response.candidates[0].program_level_boost, 0)
+        self.assertIn(
+            "16 Mathematics credits",
+            response.candidates[0].profile.chunk.text,
+        )
+        self.assertEqual(
+            response.candidates[0].evidence[0].chunk.field_name,
+            "qualifying_examination",
+        )
+
+    def test_named_course_discovery_exposes_numeric_requirement(self) -> None:
+        response = self.retriever.discover_courses(
+            "I have 12 credits in Mathematics. Can I do MCA?",
+            limit=1,
+        )
+
+        self.assertEqual(response.query.preferred_fields, ["qualifying_examination"])
+        self.assertEqual(response.candidates[0].course.record_id, self.mca.record_id)
+        self.assertIn(
+            "16 Mathematics credits",
+            response.candidates[0].evidence[0].chunk.text,
+        )
 
 
 if __name__ == "__main__":

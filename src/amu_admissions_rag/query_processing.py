@@ -19,6 +19,8 @@ class CourseAlias:
 
     @property
     def pattern(self) -> re.Pattern[str]:
+        if self.abbreviation == "BE":
+            return re.compile(r"(?<!\w)(?:BE|[Bb][\s._-]+[Ee])(?!\w)")
         letters = [re.escape(character) for character in self.abbreviation]
         separated = r"[\s._-]*".join(letters)
         return re.compile(rf"(?<!\w){separated}(?!\w)", re.IGNORECASE)
@@ -67,7 +69,8 @@ INTENT_RULES: tuple[tuple[QueryIntent, re.Pattern[str], tuple[str, ...]], ...] =
         re.compile(
             r"\b(?:eligible|eligibility|qualif(?:y|ies|ied|ication)|"
             r"require(?:s|d|ments?)?)\b|\bapply(?:ing)?\s+for\b|"
-            r"\b(?:what|which)\s+(?:degree|qualification)\b.*\bneed\b",
+            r"\b(?:what|which)\s+(?:degree|qualification)\b.*\bneed\b|"
+            r"\bcan\s+i\s+(?:do|join|pursue)\b",
             re.I,
         ),
         ("qualifying_examination",),
@@ -84,7 +87,13 @@ INTENT_RULES: tuple[tuple[QueryIntent, re.Pattern[str], tuple[str, ...]], ...] =
     ),
     (
         QueryIntent.TEST_DETAILS,
-        re.compile(r"\b(?:exam pattern|test pattern|syllabus|questions?|marks?)\b", re.I),
+        re.compile(
+            r"\b(?:exam pattern|test pattern|syllabus)\b|"
+            r"\b(?:test|exam|paper)\s+(?:questions?|marks?)\b|"
+            r"\b(?:questions?|marks?)\s+(?:in|on)\s+(?:the\s+)?"
+            r"(?:test|exam|paper)\b",
+            re.I,
+        ),
         ("test_paper_details",),
     ),
     (

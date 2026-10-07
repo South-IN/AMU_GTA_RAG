@@ -51,6 +51,15 @@ class QueryProcessorTests(unittest.TestCase):
 
         self.assertEqual(self.processor.expand(query), query)
 
+    def test_common_word_be_is_not_expanded_as_engineering_degree(self) -> None:
+        query = "Which courses could I be eligible for?"
+
+        self.assertEqual(self.processor.expand(query), query)
+        self.assertEqual(
+            self.processor.expand("Can a B.E. graduate apply?"),
+            "Can a Bachelor of Engineering graduate apply?",
+        )
+
     def test_eligibility_intent_prefers_qualifying_examination(self) -> None:
         analysis = self.processor.analyze("Am I eligible for MCA?")
 
@@ -94,6 +103,12 @@ class QueryProcessorTests(unittest.TestCase):
 
         self.assertIn(QueryIntent.ELIGIBILITY, analysis.intents)
         self.assertEqual(analysis.preferred_fields, ["qualifying_examination"])
+
+    def test_can_i_do_is_eligibility_but_academic_marks_are_not_test_details(self) -> None:
+        analysis = self.processor.analyze("I have 60% marks. Can I do MCA?")
+
+        self.assertIn(QueryIntent.ELIGIBILITY, analysis.intents)
+        self.assertNotIn(QueryIntent.TEST_DETAILS, analysis.intents)
 
     def test_query_without_known_intent_is_general(self) -> None:
         analysis = self.processor.analyze("Tell me about MBA")

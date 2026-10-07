@@ -55,6 +55,9 @@ Run hybrid retrieval over the approved corpus:
 
 ```powershell
 & $python -m amu_admissions_rag.retrieval_cli "What is the MCA age limit?" --limit 5
+& $python -m amu_admissions_rag.retrieval_cli `
+  "I completed B.Sc. Computer Science. Which courses can I apply for?" `
+  --discover-courses --limit 5
 ```
 
 The local runner combines BM25, deterministic offline vectors and RRF, then hydrates the reviewed parent course. See [docs/HYBRID_RETRIEVAL.md](docs/HYBRID_RETRIEVAL.md).

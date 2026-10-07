@@ -257,3 +257,18 @@
 - The varied retrieval evaluation passes 16/16 cases at top-5
 - The evaluation covers eligibility, age, selection, tests, test centres and intake/table-row queries
 - Every evaluated course in the human-validated sample is represented
+
+### Multi-granularity retrieval refinement
+
+- Replaced label-only course overviews with content-rich course profiles
+- Included every narrative course field and bounded 20-row table summaries in profiles
+- Retained complete parent records and focused child chunks for evidence and citations
+- Added parent-level course discovery with relevant child-evidence attachment
+- Added a soft programme-progression signal for explicitly completed qualifications
+- Prevented the ordinary word `be` from expanding to Bachelor of Engineering
+- Stopped ordinary academic `marks` from triggering test-paper intent
+- Added `can I do` eligibility phrasing
+- Added a reproducible five-query course-discovery evaluation
+- The approved index remains 190 chunks across 15 reviewed courses
+- The course-discovery evaluation passes 5/5 cases at rank 1
+- The complete test suite passes 70 tests

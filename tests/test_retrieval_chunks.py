@@ -117,6 +117,23 @@ class RetrievalChunkBuilderTests(unittest.TestCase):
         self.assertIn("at least 55% marks", chunk.text)
         self.assertEqual(chunk.field_name, "qualifying_examination")
 
+    def test_course_profile_contains_full_fields_and_table_summary(self) -> None:
+        corpus = self._build()
+        profile = next(
+            item
+            for item in corpus.chunks
+            if item.chunk_type is ChunkType.COURSE_OVERVIEW
+        )
+
+        self.assertIn("Record Type: Course Profile", profile.text)
+        self.assertIn(
+            "Qualifying Examination: Applicants require Mathematics",
+            profile.text,
+        )
+        self.assertIn("Duration=4 Semesters", profile.text)
+        self.assertIn("Intake=60+6", profile.text)
+        self.assertEqual(profile.metadata["retrieval_role"], "course_discovery")
+
     def test_course_table_row_is_its_own_self_contained_chunk(self) -> None:
         corpus = self._build()
         chunk = next(

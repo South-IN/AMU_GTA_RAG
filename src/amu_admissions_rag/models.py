@@ -287,3 +287,17 @@ class RetrievalResponse(BaseModel):
     hits: list[RetrievalHit] = Field(default_factory=list)
     course_parents: dict[str, CourseRecord] = Field(default_factory=dict)
     embedding_provider: NonEmptyText
+
+
+class CourseCandidate(BaseModel):
+    course: CourseRecord
+    score: float = Field(ge=0)
+    program_level_boost: float = Field(default=0, ge=0)
+    profile: RetrievalHit
+    evidence: list[RetrievalHit] = Field(default_factory=list)
+
+
+class CourseDiscoveryResponse(BaseModel):
+    query: QueryAnalysis
+    candidates: list[CourseCandidate] = Field(default_factory=list)
+    embedding_provider: NonEmptyText

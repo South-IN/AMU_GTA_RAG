@@ -16,6 +16,11 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--queries", type=Path, default=Path("evaluation/retrieval_queries.json"))
     parser.add_argument("--limit", type=int, default=5)
     parser.add_argument("--output", type=Path)
+    parser.add_argument(
+        "--discover-courses",
+        action="store_true",
+        help="Evaluate parent course-profile ranking instead of flat chunks",
+    )
     return parser
 
 
@@ -37,6 +42,51 @@ def main() -> None:
     results: list[dict[str, object]] = []
     passed = 0
     for case in cases:
+        if args.discover_courses:
+            response = retriever.discover_courses(case["query"], limit=args.limit)
+            expected_parent = case["expected_parent_record_id"]
+            expected_max_rank = case.get("expected_max_rank", args.limit)
+            matched_rank = next(
+                (
+                    rank
+                    for rank, candidate in enumerate(response.candidates, start=1)
+                    if candidate.course.record_id == expected_parent
+                ),
+                None,
+            )
+            success = matched_rank is not None and matched_rank <= expected_max_rank
+            passed += int(success)
+            result = {
+                "query": case["query"],
+                "expanded_query": response.query.expanded_query,
+                "intents": [intent.value for intent in response.query.intents],
+                "expected_parent_record_id": expected_parent,
+                "expected_max_rank": expected_max_rank,
+                "matched_rank": matched_rank,
+                "success": success,
+                "candidates": [
+                    {
+                        "rank": rank,
+                        "course_name": candidate.course.course_name,
+                        "parent_record_id": candidate.course.record_id,
+                        "score": round(candidate.score, 6),
+                        "evidence_fields": [
+                            hit.chunk.field_name for hit in candidate.evidence
+                        ],
+                    }
+                    for rank, candidate in enumerate(response.candidates, start=1)
+                ],
+            }
+            results.append(result)
+            status = "PASS" if success else "FAIL"
+            top = (
+                response.candidates[0].course.course_name
+                if response.candidates
+                else "no result"
+            )
+            print(f"{status}: {case['query']} -> {top}")
+            continue
+
         response = retriever.search(case["query"], limit=args.limit)
         expected_parent = case["expected_parent_record_id"]
         expected_field = case.get("expected_field")
@@ -77,6 +127,7 @@ def main() -> None:
 
     report = {
         "embedding_provider": retriever.embedding_provider.name,
+        "mode": "course_discovery" if args.discover_courses else "chunk_retrieval",
         "top_k": args.limit,
         "passed": passed,
         "total": len(cases),

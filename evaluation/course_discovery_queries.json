@@ -1,0 +1,27 @@
+[
+  {
+    "query": "I completed B.Sc. (Hons. with Research) in Computer Science. Which courses am I eligible for?",
+    "expected_parent_record_id": "amu-guide-2026-27:94:2:master-of-computer-science-and-applications-mca",
+    "expected_max_rank": 1
+  },
+  {
+    "query": "I have completed 12 credits in Mathematics. Can I do MCA?",
+    "expected_parent_record_id": "amu-guide-2026-27:94:2:master-of-computer-science-and-applications-mca",
+    "expected_max_rank": 1
+  },
+  {
+    "query": "I have a B.Tech in Computer Science with 65% and a valid GATE score. What postgraduate course can I apply for?",
+    "expected_parent_record_id": "amu-guide-2026-27:80:2:master-of-technology-m-tech-computer-science-engineering",
+    "expected_max_rank": 1
+  },
+  {
+    "query": "I have a B.Com degree with 60% marks. Which approved courses could I be eligible for?",
+    "expected_parent_record_id": "amu-guide-2026-27:90:1:master-of-business-administration-mba",
+    "expected_max_rank": 1
+  },
+  {
+    "query": "I passed Class 12 with Physics, Chemistry and Biology and have a NEET-UG score. What can I apply for?",
+    "expected_parent_record_id": "amu-guide-2026-27:62:1:m-b-b-s",
+    "expected_max_rank": 1
+  }
+]

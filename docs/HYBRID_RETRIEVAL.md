@@ -13,6 +13,17 @@ Phase 8 provides a runnable retrieval path over the approved corpus.
 
 Parent hydration happens after retrieval. It gives the application the complete reviewed course record and sibling fields while the retrieved child remains the cited evidence.
 
+## Multi-granularity course discovery
+
+Every approved course has two retrieval representations:
+
+- A content-rich course profile containing all narrative fields and a bounded table summary. It is used to discover and rank complete courses.
+- Focused field and table-row chunks. They provide precise evidence and page citations.
+
+Course discovery ranks only course profiles, applies a soft programme-progression preference when the applicant explicitly reports a completed qualification, hydrates the complete parent record, and then attaches the most relevant child evidence. Table summaries include at most 20 rows; the hydrated parent and table-row chunks retain every row.
+
+This is relational parent aggregation, not graph retrieval. A course profile is a recall document and must not be used as the sole citation when its content spans pages.
+
 ## Embedding boundary
 
 `EmbeddingProvider` is provider-neutral. Phase 8 includes `HashingEmbeddingProvider`, a deterministic NumPy-only word/bigram/character feature vectorizer, so the entire pipeline can be run offline without credentials.
@@ -24,9 +35,17 @@ The hashing provider validates vector storage, cosine ranking, fusion and parent
 ```powershell
 $env:PYTHONPATH = "src"
 & $python -m amu_admissions_rag.retrieval_cli "Am I eligible for M.C.A.?" --limit 5
+& $python -m amu_admissions_rag.retrieval_cli `
+  "I completed B.Sc. Computer Science. Which courses am I eligible for?" `
+  --discover-courses --limit 5
 & $python -m amu_admissions_rag.evaluate_retrieval_cli `
   --limit 5 `
   --output data/processed/phase8-retrieval-evaluation.json
+& $python -m amu_admissions_rag.evaluate_retrieval_cli `
+  --discover-courses `
+  --queries evaluation/course_discovery_queries.json `
+  --limit 3 `
+  --output data/processed/phase8-course-discovery-evaluation.json
 ```
 
 The checked-in evaluation questions cover all 15 approved sample courses. Generated reports stay outside Git with the other processed artifacts.

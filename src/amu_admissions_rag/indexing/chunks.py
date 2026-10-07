@@ -61,27 +61,35 @@ class RetrievalChunkBuilder:
 
     def _course_overview_chunk(self, course: CourseRecord) -> RetrievalChunk:
         lines = self._course_context(course)
-        lines.extend(
-            [
-                "Record Type: Course Overview",
-                "Available Fields: "
-                + ", ".join(field.label for field in course.fields),
-            ]
-        )
-        if course.tables:
-            lines.append(
-                "Available Tables: "
-                + ", ".join(self._display_name(table.name) for table in course.tables)
-            )
+        lines.extend(["Record Type: Course Profile", ""])
+        for field in course.fields:
+            lines.extend([f"{field.label}: {field.value}", ""])
+        for table in course.tables:
+            lines.append(f"{self._display_name(table.name)} Summary:")
+            for row_index, row in enumerate(table.rows[:20], start=1):
+                values = [
+                    f"{self._display_name(header)}={row[header].text}"
+                    for header in table.headers
+                    if header in row
+                ]
+                lines.append(f"Row {row_index}: {'; '.join(values)}")
+            if len(table.rows) > 20:
+                lines.append(
+                    f"Additional Rows: {len(table.rows) - 20}; "
+                    "available through linked table-row evidence"
+                )
         return RetrievalChunk(
             chunk_id=f"{course.record_id}:overview",
             document_id=course.document_id,
             chunk_type=ChunkType.COURSE_OVERVIEW,
             parent_record_id=course.record_id,
-            title=f"{course.course_name} - Overview",
+            title=f"{course.course_name} - Course Profile",
             text="\n".join(lines),
             source=course.source,
-            metadata=self._course_metadata(course),
+            metadata={
+                **self._course_metadata(course),
+                "retrieval_role": "course_discovery",
+            },
             review=course.review,
         )
 

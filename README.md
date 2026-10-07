@@ -13,7 +13,9 @@ Human-validated retrieval pipeline for the AMU Guide to Admissions 2026-27.
 ## Development
 
 ```powershell
-$python = "C:\Users\gtx25\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\python.exe"
+python -m venv .venv
+$python = ".\.venv\Scripts\python.exe"
+& $python -m pip install -e .
 & $python -m unittest discover -s tests -v
 ```
 

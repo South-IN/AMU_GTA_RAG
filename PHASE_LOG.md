@@ -320,3 +320,4 @@
 - Saved original queries, expanded queries, exact retrieved contexts, model answers and source pages in `docs/PHASE9_LIVE_EVALUATION.md`
 - Direct-course retrieval selected the intended course in 7/7 cases; course discovery ranked MCA first but returned two irrelevant lower-ranked candidates
 - Seven of eight answers included inline source markers; the citation miss and merged-cell M.Tech intake representation are recorded for refinement
+- Replaced the machine-specific Python executable path in the public README with portable virtual-environment setup instructions

@@ -289,7 +289,7 @@
 
 ## Phase 9: Grounded Answer Generation
 
-**Status:** Implementation complete; live API validation pending explicit approval to transmit retrieved guide content to Groq
+**Status:** Complete
 **Date:** 2026-10-07
 
 ### Changes
@@ -313,4 +313,6 @@
 
 - Unit tests verify the selected model, grounded prompt, API payload and offline abstention
 - The complete local test suite passes 74 tests
-- A real Groq call remains pending explicit approval for third-party transmission of the test query and retrieved AMU guide chunk
+- The first approved live request exposed Groq/Cloudflare error 1010 for Python's default HTTP fingerprint; the client now sends an explicit application user agent and JSON accept header
+- The approved live end-to-end request succeeded with `openai/gpt-oss-20b`, retrieved the MCA course chunk, compared 12 stated Mathematics credits against the 16-credit requirement and cited printed page B.25
+- MCA is an acceptance-test example, not a special-case workflow; the same pipeline handles every course admitted to the approved guide index

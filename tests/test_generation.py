@@ -45,6 +45,8 @@ class GroqGenerationTests(unittest.TestCase):
         payload = json.loads(request.data.decode("utf-8"))
         self.assertEqual(payload["model"], DEFAULT_GROQ_MODEL)
         self.assertEqual(payload["reasoning_effort"], "low")
+        self.assertEqual(request.headers["User-agent"], "AMU-Admissions-RAG/0.1")
+        self.assertEqual(request.headers["Accept"], "application/json")
         self.assertIn("MCA requires 16 credits", payload["messages"][1]["content"])
         self.assertIn("only from the supplied", payload["messages"][0]["content"])
 

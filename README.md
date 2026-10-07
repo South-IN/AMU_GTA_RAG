@@ -65,7 +65,7 @@ Run hybrid retrieval over the approved corpus:
 
 The local runner combines BM25, deterministic offline vectors and RRF, then hydrates the reviewed parent course. See [docs/HYBRID_RETRIEVAL.md](docs/HYBRID_RETRIEVAL.md).
 
-Generate a grounded answer with Groq:
+Generate a grounded answer for any course in the approved guide corpus with Groq:
 
 ```powershell
 & $python -m amu_admissions_rag.answer_cli `

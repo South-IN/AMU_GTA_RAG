@@ -321,3 +321,28 @@
 - Direct-course retrieval selected the intended course in 7/7 cases; course discovery ranked MCA first but returned two irrelevant lower-ranked candidates
 - Seven of eight answers included inline source markers; the citation miss and merged-cell M.Tech intake representation are recorded for refinement
 - Replaced the machine-specific Python executable path in the public README with portable virtual-environment setup instructions
+
+## Phase 10: Streamlit Chat Interface
+
+**Status:** Complete
+**Date:** 2026-10-07
+
+### Changes
+
+- Added a polished Streamlit chat interface with responsive AMU-inspired styling
+- Added example questions, session chat history, loading and error states, guide download and a clear-conversation control
+- Added a reusable `AdmissionsAssistant` service shared by the CLI and UI
+- Added automatic routing between direct hybrid retrieval and multi-course discovery
+- Converted validated `[SOURCE N]` markers into links to page-labelled source cards
+- Added expandable complete retrieved contexts without displaying internal retrieval scores
+- Added one-pass citation repair for missing or invalid source markers
+- Added deterministic detection and repair of overconfident course-discovery eligibility claims
+- Displayed the current 15-course human-validation boundary in the sidebar
+
+### Validation
+
+- Verified the landing page visually in a real browser
+- Verified a direct B.A.LL.B. answer, linked citation, printed page and complete source card end to end
+- Verified automatic postgraduate course discovery with three independently linked source cards
+- Confirmed discovery answers disclose missing Mathematics-credit and aggregate-mark evidence instead of declaring full eligibility
+- Added service, citation rendering, safety repair and Streamlit landing-page tests

@@ -77,5 +77,14 @@ Generate a grounded answer for any course in the approved guide corpus with Groq
 
 The API key and model are read from the ignored `.env`; see [docs/ANSWER_GENERATION.md](docs/ANSWER_GENERATION.md).
 
+Launch the Streamlit chat interface:
+
+```powershell
+$env:PYTHONPATH = "src"
+& $python -m streamlit run streamlit_app.py
+```
+
+The UI provides linked in-text citations, page-labelled source cards, automatic course-discovery routing and guarded eligibility language. See [docs/STREAMLIT_UI.md](docs/STREAMLIT_UI.md).
+
 See [PROJECT_PLAN.md](PROJECT_PLAN.md) for the full architecture and
 [PHASE_LOG.md](PHASE_LOG.md) for implementation history.

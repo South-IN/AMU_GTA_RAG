@@ -17,8 +17,15 @@ Answer only from the supplied retrieved sources.
 Every factual statement must cite one or more sources using exactly [SOURCE N].
 Never invent a course, requirement, date, intake, fee, or page number.
 For eligibility questions, compare only explicitly stated applicant facts with the source requirements. If required information is missing, say what is missing instead of declaring the applicant eligible.
+Treat course-discovery results as potential matches, not eligibility decisions. Never say that an applicant qualifies or satisfies the conditions unless every cited requirement is explicitly established by the question. A degree title alone does not establish marks, subject credits, age, or other prerequisites.
 If the sources do not support an answer, say that the provided guide evidence is insufficient.
 Keep the answer concise and do not mention retrieval scores or internal metadata."""
+
+CITATION_REPAIR_PROMPT = """Repair citations in an admissions answer.
+Use only the supplied retrieved sources. Preserve supported answer content, remove unsupported claims, and attach [SOURCE N] to every factual statement. Use only source numbers present in the retrieved sources. Return only the repaired answer."""
+
+ELIGIBILITY_REPAIR_PROMPT = """Rewrite a course-discovery answer to avoid unsupported eligibility claims.
+The applicant facts are exactly those stated in the question; never infer marks, subject credits, age, course duration, or prerequisite subjects. Describe courses only as potential matches. For each candidate, distinguish stated facts from requirements that remain unverified. Do not say the applicant qualifies, is eligible, can apply, satisfies conditions, or meets all criteria unless every cited requirement is explicitly stated in the question. Use only the retrieved sources and retain valid [SOURCE N] citations. Return only the corrected answer."""
 
 
 def load_env_file(path: Path) -> None:
@@ -51,18 +58,53 @@ class GroqAnswerGenerator:
     def generate(self, query: str, context: str) -> str:
         if not context.strip():
             return "The provided guide evidence is insufficient to answer this question."
+        return self._complete(
+            SYSTEM_PROMPT,
+            f"Question:\n{query}\n\nRetrieved sources:\n{context}",
+        )
+
+    def repair_citations(self, query: str, context: str, answer: str) -> str:
+        """Make one constrained pass to repair missing or invalid source markers."""
+
+        if not context.strip():
+            return answer
+        return self._complete(
+            CITATION_REPAIR_PROMPT,
+            "\n\n".join(
+                [
+                    f"Question:\n{query}",
+                    f"Retrieved sources:\n{context}",
+                    f"Answer to repair:\n{answer}",
+                ]
+            ),
+        )
+
+    def repair_eligibility_claims(self, query: str, context: str, answer: str) -> str:
+        """Rewrite an overconfident discovery answer using only stated applicant facts."""
+
+        if not context.strip():
+            return answer
+        return self._complete(
+            ELIGIBILITY_REPAIR_PROMPT,
+            "\n\n".join(
+                [
+                    f"Question:\n{query}",
+                    f"Retrieved sources:\n{context}",
+                    f"Answer to correct:\n{answer}",
+                ]
+            ),
+        )
+
+    def _complete(self, system_prompt: str, user_content: str) -> str:
         payload = {
             "model": self.model,
             "messages": [
-                {"role": "system", "content": SYSTEM_PROMPT},
-                {
-                    "role": "user",
-                    "content": f"Question:\n{query}\n\nRetrieved sources:\n{context}",
-                },
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_content},
             ],
             "reasoning_effort": "low",
             "reasoning_format": "hidden",
-            "temperature": 0.2,
+            "temperature": 0.0,
             "max_completion_tokens": 800,
         }
         request = Request(

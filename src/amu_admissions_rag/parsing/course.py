@@ -152,6 +152,12 @@ class CourseParser:
                 start_top=anchor.top,
                 end_top=end_top,
             )
+            # Narrative uses of "Course of Study" can resemble a course-card
+            # heading. A real guide card must contribute at least one parsed
+            # field or one normalized course-details table.
+            if not fields and not tables:
+                continue
+
             course_code = self._single_course_code(tables)
             results.append(
                 CourseRecord(
@@ -526,4 +532,3 @@ class CourseParser:
     ) -> str:
         slug = re.sub(r"[^a-z0-9]+", "-", course_name.lower()).strip("-")
         return f"{document_id}:{physical_page}:{index + 1}:{slug[:72]}"
-

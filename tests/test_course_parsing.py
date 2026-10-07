@@ -16,6 +16,9 @@ class CourseParserTests(unittest.TestCase):
             extractor.extract_pages([80]),
             initial_faculty="Faculty of Engineering & Technology",
         )
+        cls.narrative_mentions = CourseParser().parse(
+            extractor.extract_pages([21, 34, 186])
+        )
 
     def test_standard_course_card(self) -> None:
         agriculture = self.undergraduate.courses[0]
@@ -57,7 +60,9 @@ class CourseParserTests(unittest.TestCase):
             )
         )
 
+    def test_narrative_course_of_study_mentions_are_rejected(self) -> None:
+        self.assertEqual(self.narrative_mentions.courses, [])
+
 
 if __name__ == "__main__":
     unittest.main()
-

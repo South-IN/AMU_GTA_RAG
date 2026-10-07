@@ -85,6 +85,7 @@
 - Added forward-fill handling for visually merged duration and intake cells
 - Added programme-level, faculty-context and source-page assignment
 - Added a CLI that writes pending course records for human validation
+- Rejected narrative uses of "Course of Study" when they produce neither course fields nor a normalized course table
 
 ### Decisions
 
@@ -99,3 +100,7 @@
 - Tests verify course codes, fields, faculty context and merged-cell inheritance
 - Undergraduate smoke parsing produced 31 pending records with no unresolved faculty values
 - All 31 undergraduate records retained at least one normalized course-detail table
+- Full-guide extraction processed all 187 physical pages into 8,642 positioned lines and 697 raw tables
+- Full-guide parsing produced 179 pending course records across 66 course pages
+- The final pending corpus contains 180 normalized course tables, 372 table rows and no unresolved faculties or duplicate record IDs
+- Regression coverage rejects three narrative false positives found during the first full-document run

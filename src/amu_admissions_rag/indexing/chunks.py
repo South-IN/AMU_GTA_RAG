@@ -18,6 +18,7 @@ from amu_admissions_rag.models import (
     ReviewStatus,
     SectionRecord,
 )
+from amu_admissions_rag.query_processing import course_name_expansions
 
 
 class RetrievalChunkBuilder:
@@ -209,6 +210,9 @@ class RetrievalChunkBuilder:
     @staticmethod
     def _course_context(course: CourseRecord) -> list[str]:
         lines = [f"Course: {course.course_name}"]
+        expansions = course_name_expansions(course.course_name)
+        if expansions:
+            lines.append(f"Expanded Course Name: {', '.join(expansions)}")
         if course.course_code:
             lines.append(f"Course Code: {course.course_code}")
         lines.extend(

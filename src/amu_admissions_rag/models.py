@@ -43,6 +43,20 @@ class ChunkType(str, Enum):
     APPENDIX_ROW = "appendix_row"
 
 
+class QueryIntent(str, Enum):
+    ELIGIBILITY = "eligibility"
+    AGE_LIMIT = "age_limit"
+    SELECTION_PROCESS = "selection_process"
+    TEST_DETAILS = "test_details"
+    TEST_CENTRES = "test_centres"
+    INTAKE = "intake"
+    DURATION = "duration"
+    FEES = "fees"
+    APPLICATION_DATES = "application_dates"
+    TEST_SCHEDULE = "test_schedule"
+    GENERAL = "general"
+
+
 class BoundingBox(BaseModel):
     x0: float = Field(ge=0)
     top: float = Field(ge=0)
@@ -233,3 +247,25 @@ class RetrievalChunk(BaseModel):
 class IndexCorpus(BaseModel):
     document: DocumentRecord
     chunks: list[RetrievalChunk]
+
+
+class CourseAliasMatch(BaseModel):
+    abbreviation: NonEmptyText
+    full_name: NonEmptyText
+    matched_text: NonEmptyText
+    start: int = Field(ge=0)
+    end: int = Field(gt=0)
+
+    @model_validator(mode="after")
+    def validate_span(self) -> "CourseAliasMatch":
+        if self.end <= self.start:
+            raise ValueError("alias match end must be greater than start")
+        return self
+
+
+class QueryAnalysis(BaseModel):
+    original_query: NonEmptyText
+    expanded_query: NonEmptyText
+    aliases: list[CourseAliasMatch] = Field(default_factory=list)
+    intents: list[QueryIntent] = Field(default_factory=list)
+    preferred_fields: list[str] = Field(default_factory=list)

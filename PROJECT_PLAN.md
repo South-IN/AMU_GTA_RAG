@@ -82,6 +82,8 @@ Processing steps:
 4. Send the expanded query to retrieval
 5. Keep the original query for display
 
+The implementation preserves the original query exactly and modifies only recognized abbreviation spans. Intent rules supply soft field preferences for retrieval; they do not exclude other relevant chunks.
+
 Example pattern:
 
 ```python

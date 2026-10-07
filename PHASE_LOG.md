@@ -188,3 +188,35 @@
 - Tests cover self-contained content, persisted parent links, approval gating, PostgreSQL constraints and RRF structure
 - The complete test suite passes 47 tests
 - Live PostgreSQL loading was not run because the available local server requires unavailable credentials and does not have pgvector installed
+
+## Phase 7: Query Normalization and Intent Routing
+
+**Status:** Complete
+**Date:** 2026-10-07
+
+### Changes
+
+- Added punctuation-tolerant course-abbreviation expansion
+- Preserved the original query and all non-alias casing, punctuation and whitespace
+- Added lightweight multi-intent detection with retrieval field preferences
+- Added full-name enrichment for abbreviation-only course titles in retrieval chunks
+- Added a CLI with plain expanded output and optional debug metadata
+- Added query-processing documentation and examples
+
+### Decisions
+
+- Modify only recognized abbreviation spans instead of normalizing the entire query
+- Use boundary-aware patterns to prevent aliases from matching inside ordinary words
+- Keep intent detection deterministic and inexpensive for the MVP
+- Treat intent fields as ranking hints rather than hard retrieval filters
+- Keep the original query for display and use the expanded query only for retrieval
+
+### Validation
+
+- `MCA`, `mca`, `M.C.A.`, `M.CA` and `M C A` produce the same expansion
+- Multiple aliases in one question expand independently
+- Abbreviation punctuation is removed without consuming surrounding sentence punctuation
+- Unrelated capitalization, spacing and punctuation remain unchanged
+- Eligibility and multi-intent questions select the expected preferred fields
+- The reviewed sample still builds 190 approved retrieval chunks after name enrichment
+- The complete test suite passes 56 tests

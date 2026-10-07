@@ -43,5 +43,13 @@ Human approvals are applied from an auditable review batch rather than by editin
   --output data/review/guide-2026-27.course-corpus.reviewed.json
 ```
 
+Expand course abbreviations while preserving the rest of the query:
+
+```powershell
+& $python -m amu_admissions_rag.query_cli "Am I eligible for M.C.A.?"
+```
+
+See [docs/QUERY_PROCESSING.md](docs/QUERY_PROCESSING.md) for supported behavior and intent routing.
+
 See [PROJECT_PLAN.md](PROJECT_PLAN.md) for the full architecture and
 [PHASE_LOG.md](PHASE_LOG.md) for implementation history.

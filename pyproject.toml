@@ -22,6 +22,7 @@ amu-parse-policies = "amu_admissions_rag.policy_cli:main"
 amu-build-index = "amu_admissions_rag.index_cli:main"
 amu-apply-review = "amu_admissions_rag.apply_review_cli:main"
 amu-load-index = "amu_admissions_rag.load_index_cli:main"
+amu-query = "amu_admissions_rag.query_cli:main"
 amu-export-review = "amu_admissions_rag.review_cli:main"
 
 

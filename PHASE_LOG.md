@@ -86,6 +86,7 @@
 - Added programme-level, faculty-context and source-page assignment
 - Added a CLI that writes pending course records for human validation
 - Rejected narrative uses of "Course of Study" when they produce neither course fields nor a normalized course table
+- Added a metadata-light JSON export for human reviewers that preserves content, tables, review state and page references
 
 ### Decisions
 
@@ -104,3 +105,4 @@
 - Full-guide parsing produced 179 pending course records across 66 course pages
 - The final pending corpus contains 180 normalized course tables, 372 table rows and no unresolved faculties or duplicate record IDs
 - Regression coverage rejects three narrative false positives found during the first full-document run
+- Reviewer-export tests verify that technical IDs, hashes and bounding boxes are removed without losing reviewable values

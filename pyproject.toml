@@ -17,6 +17,7 @@ dependencies = [
 [project.scripts]
 amu-extract = "amu_admissions_rag.cli:main"
 amu-parse-courses = "amu_admissions_rag.course_cli:main"
+amu-export-review = "amu_admissions_rag.review_cli:main"
 
 
 [project.optional-dependencies]

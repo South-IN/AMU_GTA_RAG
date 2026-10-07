@@ -285,3 +285,4 @@
 - The full preview contains 1,723 chunks: 179 courses plus policy and appendix content
 - Field retrieval remains 16/16 at top-5 and course discovery remains 5/5 at rank 1
 - The complete test suite passes 71 tests
+- Evaluation JSON now records the complete retrieved chunk and source pages for every query

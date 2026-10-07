@@ -80,9 +80,13 @@ def main() -> None:
                         "course_name": candidate.course.course_name,
                         "parent_record_id": candidate.course.record_id,
                         "score": round(candidate.score, 6),
-                        "evidence_fields": [
-                            hit.chunk.field_name for hit in candidate.evidence
-                        ],
+                        "retrieved_chunk": {
+                            "chunk_id": candidate.profile.chunk.chunk_id,
+                            "title": candidate.profile.chunk.title,
+                            "content": candidate.profile.chunk.text,
+                            "printed_page": candidate.profile.chunk.source.printed_page,
+                            "physical_page": candidate.profile.chunk.source.physical_page,
+                        },
                     }
                     for rank, candidate in enumerate(response.candidates, start=1)
                 ],
@@ -132,6 +136,8 @@ def main() -> None:
                     "field_name": hit.chunk.field_name,
                     "parent_record_id": hit.chunk.parent_record_id,
                     "printed_page": hit.chunk.source.printed_page,
+                    "physical_page": hit.chunk.source.physical_page,
+                    "content": hit.chunk.text,
                     "score": round(hit.fused_score, 6),
                 }
                 for rank, hit in enumerate(response.hits, start=1)

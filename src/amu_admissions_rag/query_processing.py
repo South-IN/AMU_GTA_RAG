@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass
+from functools import cache
 
 from amu_admissions_rag.models import (
     CourseAliasMatch,
@@ -11,34 +12,87 @@ from amu_admissions_rag.models import (
     QueryIntent,
 )
 
+SEPARATOR = r"[\s._-]*"
+
 
 @dataclass(frozen=True)
 class CourseAlias:
+    """A course abbreviation and the spellings that expand to its full name.
+
+    By default the letters of ``abbreviation`` match in any case, optionally
+    separated by spaces, periods, underscores or hyphens (``MCA``, ``m.c.a.``,
+    ``M CA``). ``spellings`` add multi-letter segment forms such as
+    ``B.Lib.I.Sc.``. A ``word_like`` alias spells an ordinary word (``bed``,
+    ``med``, ``ma``, ``march``), so it matches only in upper case, in the segment
+    case of its spelling (``BEd``, ``M Arch``) or when a period follows the
+    first segment (``b.ed``, ``M. Arch.``).
+    """
+
     abbreviation: str
     full_name: str
+    spellings: tuple[str, ...] = ()
+    word_like: bool = False
 
     @property
     def pattern(self) -> re.Pattern[str]:
-        if self.abbreviation == "BE":
-            return re.compile(r"(?<!\w)(?:BE|[Bb][\s._-]+[Ee])(?!\w)")
-        letters = [re.escape(character) for character in self.abbreviation]
-        separated = r"[\s._-]*".join(letters)
-        return re.compile(rf"(?<!\w){separated}(?!\w)", re.IGNORECASE)
+        return _alias_pattern(self.abbreviation, self.spellings, self.word_like)
+
+
+@cache
+def _alias_pattern(
+    abbreviation: str,
+    spellings: tuple[str, ...],
+    word_like: bool,
+) -> re.Pattern[str]:
+    forms = [list(abbreviation)] + [_segments(spelling) for spelling in spellings]
+    if not word_like:
+        alternatives = [SEPARATOR.join(map(re.escape, form)) for form in forms]
+        return re.compile(
+            rf"(?<!\w)(?:{'|'.join(alternatives)})(?!\w)",
+            re.IGNORECASE,
+        )
+
+    segments = forms[1] if len(forms) > 1 else forms[0]
+    exact = [abbreviation.upper(), "".join(segments)]
+    alternatives = [re.escape(form) for form in dict.fromkeys(exact)]
+    alternatives.append(r"\s+".join(map(re.escape, segments)))
+    dotted = re.escape(segments[0]) + r"[\s_-]*\.[\s._-]*"
+    dotted += SEPARATOR.join(map(re.escape, segments[1:]))
+    alternatives.append(f"(?i:{dotted})")
+    return re.compile(rf"(?<!\w)(?:{'|'.join(alternatives)})(?!\w)")
+
+
+def _segments(spelling: str) -> list[str]:
+    return re.findall(r"[A-Za-z]+", spelling)
 
 
 COURSE_ALIASES: tuple[CourseAlias, ...] = (
     CourseAlias("BALLB", "Bachelor of Arts and Bachelor of Laws"),
-    CourseAlias("BLIS", "Bachelor of Library and Information Science"),
-    CourseAlias("MLIS", "Master of Library and Information Science"),
+    CourseAlias(
+        "BLIS",
+        "Bachelor of Library and Information Science",
+        spellings=("B.Lib.I.Sc.", "B.Lib."),
+    ),
+    CourseAlias(
+        "MLIS",
+        "Master of Library and Information Science",
+        spellings=("M.Lib.I.Sc.", "M.Lib."),
+    ),
     CourseAlias("BTECH", "Bachelor of Technology"),
     CourseAlias("MTECH", "Master of Technology"),
     CourseAlias("BARCH", "Bachelor of Architecture"),
+    CourseAlias("MARCH", "Master of Architecture", spellings=("M.Arch.",), word_like=True),
+    CourseAlias("MPLAN", "Master of Planning", spellings=("M.Plan.",), word_like=True),
     CourseAlias("MBBS", "Bachelor of Medicine and Bachelor of Surgery"),
     CourseAlias("BUMS", "Kamil-e-Tib-o-Jarahat (Bachelor of Unani Medicine and Surgery)"),
     CourseAlias("BVOC", "Bachelor of Vocation"),
     CourseAlias("BPHARM", "Bachelor of Pharmacy"),
     CourseAlias("MPHARM", "Master of Pharmacy"),
+    CourseAlias("PGDCP", "Post Graduate Diploma in Computer Programming"),
+    CourseAlias("PGD", "Post Graduate Diploma", spellings=("P.G. Diploma", "P.G. Dip.")),
     CourseAlias("SSSC", "Senior Secondary School Certificate"),
+    CourseAlias("BPED", "Bachelor of Physical Education"),
+    CourseAlias("MPED", "Master of Physical Education"),
     CourseAlias("BSC", "Bachelor of Science"),
     CourseAlias("MSC", "Master of Science"),
     CourseAlias("BCOM", "Bachelor of Commerce"),
@@ -48,8 +102,9 @@ COURSE_ALIASES: tuple[CourseAlias, ...] = (
     CourseAlias("BCA", "Bachelor of Computer Applications"),
     CourseAlias("MCA", "Master of Computer Science and Applications"),
     CourseAlias("BDS", "Bachelor of Dental Surgery"),
-    CourseAlias("BED", "Bachelor of Education"),
-    CourseAlias("MED", "Master of Education"),
+    CourseAlias("BPT", "Bachelor of Physiotherapy"),
+    CourseAlias("BED", "Bachelor of Education", spellings=("B.Ed.",), word_like=True),
+    CourseAlias("MED", "Master of Education", spellings=("M.Ed.",), word_like=True),
     CourseAlias("LLB", "Bachelor of Laws"),
     CourseAlias("LLM", "Master of Laws"),
     CourseAlias("MSW", "Master of Social Work"),
@@ -57,9 +112,17 @@ COURSE_ALIASES: tuple[CourseAlias, ...] = (
     CourseAlias("BVA", "Bachelor of Visual Arts"),
     CourseAlias("MVA", "Master of Visual Arts"),
     CourseAlias("PHD", "Doctor of Philosophy"),
-    CourseAlias("BE", "Bachelor of Engineering"),
-    CourseAlias("BA", "Bachelor of Arts"),
-    CourseAlias("MA", "Master of Arts"),
+    CourseAlias("BE", "Bachelor of Engineering", word_like=True),
+    CourseAlias("BA", "Bachelor of Arts", word_like=True),
+    CourseAlias("MA", "Master of Arts", word_like=True),
+)
+
+# Acronyms in course names that are subject names, not course abbreviations.
+NON_COURSE_ACRONYMS = frozenset({"GIS"})
+
+ABBREVIATION_CANDIDATE = re.compile(
+    r"(?<![\w.])(?:[A-Z][A-Za-z]{0,3}\.\s?)+[A-Z][A-Za-z]{0,3}\.?(?!\w)"
+    r"|\b[A-Z]{3,}\b"
 )
 
 
@@ -226,3 +289,32 @@ def course_name_expansions(course_name: str) -> list[str]:
             full_name for length, full_name in candidates if length == longest
         )
     )
+
+
+def unrecognised_abbreviations(
+    text: str,
+    processor: QueryProcessor | None = None,
+) -> list[str]:
+    """Return abbreviation-like spans in ``text`` that no course alias covers.
+
+    Used to check that every abbreviation printed in a guide's course names is
+    expandable, so a new guide cannot silently lose query coverage.
+    """
+
+    processor = processor or QueryProcessor()
+    covered: set[int] = set()
+    for match in processor.analyze(text).aliases:
+        covered.update(range(match.start, match.end))
+    missing: list[str] = []
+    for candidate in ABBREVIATION_CANDIDATE.finditer(text):
+        if candidate.group(0) in NON_COURSE_ACRONYMS:
+            continue
+        letters = [
+            index
+            for index in range(candidate.start(), candidate.end())
+            if text[index].isalpha()
+        ]
+        if not all(index in covered for index in letters):
+            missing.append(candidate.group(0).strip())
+    return missing
+

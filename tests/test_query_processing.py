@@ -1,10 +1,15 @@
+import json
 import unittest
+from pathlib import Path
 
 from amu_admissions_rag.models import QueryIntent
 from amu_admissions_rag.query_processing import (
     QueryProcessor,
     course_name_expansions,
+    unrecognised_abbreviations,
 )
+
+COURSE_NAMES_FIXTURE = Path(__file__).parent / "fixtures" / "guide-2026-27-course-names.json"
 
 
 class QueryProcessorTests(unittest.TestCase):
@@ -136,6 +141,68 @@ class QueryProcessorTests(unittest.TestCase):
             course_name_expansions("Master of Social Work (M.S.W.)"),
             ["Master of Social Work"],
         )
+        self.assertEqual(
+            course_name_expansions("B.Lib.I.Sc."),
+            ["Bachelor of Library and Information Science"],
+        )
+        self.assertEqual(
+            course_name_expansions("P.G. Diploma in Computer Programming (PGDCP)"),
+            ["Post Graduate Diploma in Computer Programming"],
+        )
+
+    def test_guide_course_name_abbreviations_are_recognised(self) -> None:
+        names = json.loads(COURSE_NAMES_FIXTURE.read_text(encoding="utf-8"))["course_names"]
+
+        unrecognised = {
+            name: missing for name in names if (missing := unrecognised_abbreviations(name))
+        }
+
+        self.assertGreater(len(names), 150)
+        self.assertEqual(unrecognised, {})
+
+    def test_unrecognised_abbreviation_detection(self) -> None:
+        self.assertEqual(unrecognised_abbreviations("D.Litt. in Physics"), ["D.Litt."])
+        self.assertEqual(unrecognised_abbreviations("Remote Sensing & GIS"), [])
+        self.assertEqual(unrecognised_abbreviations("M.Sc. Physics (MCA)"), [])
+
+    def test_guide_spellings_expand(self) -> None:
+        cases = {
+            "B.Lib.I.Sc. intake": "Bachelor of Library and Information Science intake",
+            "M.Lib.I.Sc. intake": "Master of Library and Information Science intake",
+            "B.P.Ed. fees": "Bachelor of Physical Education fees",
+            "M.P.Ed. fees": "Master of Physical Education fees",
+            "M. Arch. seats": "Master of Architecture seats",
+            "M.Plan-Urban seats": "Master of Planning-Urban seats",
+            "PGDCP seats": "Post Graduate Diploma in Computer Programming seats",
+            "P.G. Diploma in Linguistics": "Post Graduate Diploma in Linguistics",
+            "PG Diploma in Linguistics": "Post Graduate Diploma in Linguistics",
+            "BPT eligibility": "Bachelor of Physiotherapy eligibility",
+        }
+        for query, expected in cases.items():
+            with self.subTest(query=query):
+                self.assertEqual(self.processor.expand(query), expected)
+
+    def test_word_like_aliases_need_capitals_or_periods(self) -> None:
+        for query in [
+            "Is there a hostel bed for girls?",
+            "I want to study med",
+            "Can I get admission, ma'am?",
+            "Are the exams in March?",
+            "Which courses could I be eligible for?",
+        ]:
+            with self.subTest(query=query):
+                self.assertEqual(self.processor.expand(query), query)
+        for query, expected in {
+            "BEd fees": "Bachelor of Education fees",
+            "b.ed fees": "Bachelor of Education fees",
+            "B Ed fees": "Bachelor of Education fees",
+            "MED seats": "Master of Education seats",
+            "m.a. english": "Master of Arts english",
+            "MA English": "Master of Arts English",
+            "MArch seats": "Master of Architecture seats",
+        }.items():
+            with self.subTest(query=query):
+                self.assertEqual(self.processor.expand(query), expected)
 
 
 if __name__ == "__main__":

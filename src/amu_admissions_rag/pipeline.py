@@ -13,6 +13,7 @@ from amu_admissions_rag.extraction import PdfExtractor
 from amu_admissions_rag.indexing import RetrievalChunkBuilder
 from amu_admissions_rag.models import ExtractedDocument, ReviewBatch
 from amu_admissions_rag.parsing import CourseParser, PolicyParser
+from amu_admissions_rag.query_processing import unrecognised_abbreviations
 from amu_admissions_rag.reviews import apply_review_batches
 from amu_admissions_rag.storage import IngestionRun, PostgresIndexStore
 
@@ -101,6 +102,18 @@ def run_pipeline(
     )
     courses = CourseParser().parse(course_pages)
     policies = PolicyParser().parse(extracted)
+    unrecognised = sorted(
+        {
+            abbreviation
+            for course in courses.courses
+            for abbreviation in unrecognised_abbreviations(course.course_name)
+        }
+    )
+    if unrecognised:
+        log(
+            "Warning: course abbreviations without a query alias "
+            f"(add them to COURSE_ALIASES): {', '.join(unrecognised)}"
+        )
     _write(paths.review_dir / PENDING_COURSES_NAME, courses)
     _write(paths.review_dir / PENDING_POLICIES_NAME, policies)
     log(

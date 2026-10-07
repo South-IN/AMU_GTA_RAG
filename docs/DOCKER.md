@@ -33,7 +33,7 @@ docker compose up -d --build
 
 Open <http://127.0.0.1:8501>. The first ingestion extracts all 187 pages and takes about a minute; `docker compose logs -f ingest` shows progress.
 
-With Podman, use `podman-compose` in place of `docker compose`; the same `compose.yaml` works with both.
+With Podman, use `podman-compose` in place of `docker compose`; the same `compose.yaml` works with both. Unlike `docker compose`, `podman-compose up` does not recreate running containers when the image changes, so after code or review changes run `podman-compose up -d --build --force-recreate`.
 
 Ports are bound to `127.0.0.1` only. Override them with `AMU_APP_HOST_PORT` (default 8501) and `AMU_DB_HOST_PORT` (default 5433) in `.env`.
 

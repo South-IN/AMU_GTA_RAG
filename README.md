@@ -23,7 +23,7 @@ Open <http://127.0.0.1:8501>. Compose starts three containers:
 - `ingest`: a one-shot job that applies migrations, extracts the guide, applies the human-review batches in `reviews/` and loads only approved records
 - `app`: the Streamlit chat interface, which reads from `db`
 
-`ingest` skips work when the PDF, code, migrations and review batches are unchanged. Podman users can run the same file with `podman-compose`. See [docs/DOCKER.md](docs/DOCKER.md) for operations, migrations and troubleshooting.
+`ingest` skips work when the PDF, code, migrations and review batches are unchanged. Podman users can run the same file with `podman-compose`; add `--force-recreate` when rebuilding so containers pick up the new image. See [docs/DOCKER.md](docs/DOCKER.md) for operations, migrations and troubleshooting.
 
 ## Human review
 

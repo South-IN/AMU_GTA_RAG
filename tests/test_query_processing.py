@@ -177,6 +177,12 @@ class QueryProcessorTests(unittest.TestCase):
             "P.G. Diploma in Linguistics": "Post Graduate Diploma in Linguistics",
             "PG Diploma in Linguistics": "Post Graduate Diploma in Linguistics",
             "BPT eligibility": "Bachelor of Physiotherapy eligibility",
+            "M.D. Anatomy seats": "Doctor of Medicine Anatomy seats",
+            "M.S. General Surgery": "Master of Surgery General Surgery",
+            "M.Ch. Neuro-Surgery": "Magister Chirurgiae Neuro-Surgery",
+            "D.M. Cardiology": "Doctor of Medicine Cardiology",
+            "M.D.S. intake": "Master of Dental Surgery intake",
+            "PDCC duration": "Post Doctoral Certificate Course duration",
         }
         for query, expected in cases.items():
             with self.subTest(query=query):
@@ -188,6 +194,8 @@ class QueryProcessorTests(unittest.TestCase):
             "I want to study med",
             "Can I get admission, ma'am?",
             "Are the exams in March?",
+            "Can Ms. Khan apply?",
+            "Please dm me the form",
             "Which courses could I be eligible for?",
         ]:
             with self.subTest(query=query):

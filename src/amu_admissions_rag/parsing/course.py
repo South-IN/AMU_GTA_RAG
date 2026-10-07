@@ -28,7 +28,7 @@ class _CourseAnchor:
 
 
 FIELD_PATTERNS: tuple[tuple[str, re.Pattern[str]], ...] = (
-    ("course_of_study", re.compile(r"^Course of Study\b\s*:?", re.IGNORECASE)),
+    ("course_of_study", re.compile(r"^Courses? of Study\b\s*:?", re.IGNORECASE)),
     ("course_details", re.compile(r"^Course Details\b\s*:?", re.IGNORECASE)),
     (
         "qualifying_examination",
@@ -87,6 +87,10 @@ HEADER_ALIASES = {
     "major subject": "major_subject",
     "discipline /department": "discipline",
     "discipline/department": "discipline",
+    "discipline": "discipline",
+    # Medical PG tables list each specialty under a "Course of Study" column.
+    "course of study": "specialization",
+    "course of study/specialization": "specialization",
     "faculty": "faculty",
     "male": "intake_male",
     "males": "intake_male",
@@ -209,7 +213,7 @@ class CourseParser:
             if self._is_noise(text):
                 continue
             if (
-                re.match(r"^Course of Study\b", text, re.IGNORECASE)
+                re.match(r"^Courses? of Study\b", text, re.IGNORECASE)
                 or re.match(r"^Course Details\b", text, re.IGNORECASE)
                 or text.lower().startswith("faculty of ")
                 or text.upper().endswith("PROGRAMMES")
@@ -322,7 +326,8 @@ class CourseParser:
     def _course_anchors(self, page: ExtractedPage) -> list[_CourseAnchor]:
         line_anchors: list[_CourseAnchor] = []
         for index, line in enumerate(page.lines):
-            if not re.match(r"^Course of Study\b", line.text.strip(), re.IGNORECASE):
+            # Some pages (e.g. medical PG programmes) use the plural heading.
+            if not re.match(r"^Courses? of Study\b", line.text.strip(), re.IGNORECASE):
                 continue
             name = self._course_name_from_line(page.lines, index)
             if name:
@@ -352,7 +357,7 @@ class CourseParser:
     ) -> str | None:
         line = lines[index]
         match = re.match(
-            r"^Course of Study\b\s*:?[\s]*(.*)$",
+            r"^Courses? of Study\b\s*:?[\s]*(.*)$",
             line.text.strip(),
             re.IGNORECASE,
         )
@@ -388,7 +393,7 @@ class CourseParser:
         for table in tables:
             flattened = [cell for row in table.rows for cell in row if cell]
             for index, cell in enumerate(flattened):
-                if cell.strip().lower() != "course of study":
+                if cell.strip().lower() not in {"course of study", "courses of study"}:
                     continue
                 for candidate in flattened[index + 1 :]:
                     normalized = candidate.strip(" :")

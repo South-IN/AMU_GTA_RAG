@@ -32,7 +32,29 @@ _HEADER_TEXTS = {
     "guide to admissions 2026-27",
 }
 _SERIAL_RE = re.compile(r"^(\d+)\.?$")
+_CONTENTS_ENTRY_RE = re.compile(
+    r"^(?P<title>.+?)\s+(?P<start>\d{1,3})(?:\s*[–-]\s*(?P<end>\d{1,3}))?$"
+)
+_TABLE_LABEL_RE = re.compile(r"\s*\(Table[-\s]?[IVX]+\)\s*", re.IGNORECASE)
+_TABLE_NUMBER_RE = re.compile(r"TABLE\s*[IVX]+", re.IGNORECASE)
+_MATCH_STOPWORDS = {
+    "the", "of", "for", "and", "in", "to", "under", "by", "their", "with", "at", "after",
+    "table", "list",
+}
+# Contents page ranges are approximate; a section may spill onto the next page.
+_CONTENTS_PAGE_TOLERANCE = 1
 _CODE_RE = re.compile(r"^[A-Z0-9-]{3,10}$")
+
+
+@dataclass(frozen=True)
+class _ContentsEntry:
+    title: str
+    start: int
+    end: int
+    aliases: tuple[str, ...]
+
+    def covers(self, page: int) -> bool:
+        return self.start <= page <= self.end + _CONTENTS_PAGE_TOLERANCE
 
 
 @dataclass
@@ -67,36 +89,75 @@ class PolicyParser:
         pages: list[ExtractedPage],
     ) -> list[SectionRecord]:
         records: list[SectionRecord] = []
-        major_heading = "Admissions policies"
+        contents = self._parse_contents(pages)
+        major_heading: str | None = "Admissions policies"
         current_heading = major_heading
 
         for page in pages:
             if not self._in_ranges(page.physical_page, POLICY_PAGE_RANGES):
                 continue
 
+            printed = self._printed_number(page.printed_page)
+            covering = [
+                entry for entry in contents if printed is not None and entry.covers(printed)
+            ]
+            if contents:
+                if covering:
+                    # Carry the section over from the previous page while the
+                    # contents still covers it; otherwise use the latest section
+                    # that has started by this page.
+                    if not any(entry.title == major_heading for entry in covering):
+                        started = [entry for entry in covering if entry.start <= printed]
+                        major_heading = (started or covering)[-1].title
+                else:
+                    # Pages outside the contents (forms, disclaimer) take their
+                    # section from their own first heading.
+                    major_heading = None
+
             content: list[ExtractedTextLine] = []
             local_index = 0
+            previous_heading: ExtractedTextLine | None = None
             for line in sorted(page.lines, key=lambda item: item.bounding_box.top):
-                if self._is_noise(line, page):
+                if self._is_noise(line, page) or _TABLE_NUMBER_RE.fullmatch(line.text.strip()):
                     continue
-                if self._is_heading(line):
-                    if content:
-                        records.extend(
-                            self._section_records(
-                                document_id,
-                                page,
-                                current_heading,
-                                major_heading,
-                                content,
-                                local_index,
+                continues_heading = (
+                    previous_heading is not None
+                    and not content
+                    and line.bounding_box.top - previous_heading.bounding_box.bottom <= 35
+                )
+                if self._is_heading(line, allow_small=continues_heading):
+                    heading_text = self._clean_text(line.text).rstrip(":")
+                    wrapped = continues_heading
+                    if wrapped:
+                        current_heading = f"{current_heading} {heading_text}"
+                    else:
+                        if content:
+                            records.extend(
+                                self._section_records(
+                                    document_id,
+                                    page,
+                                    current_heading,
+                                    major_heading or current_heading,
+                                    content,
+                                    local_index,
+                                )
                             )
-                        )
-                        local_index += len(self._split_lines(content))
-                        content = []
-                    current_heading = self._clean_text(line.text).rstrip(":")
-                    if line.max_font_size is not None and line.max_font_size >= 13:
+                            local_index += len(self._split_lines(content))
+                            content = []
+                        current_heading = heading_text
+                    previous_heading = line
+
+                    entry = self._match_contents(current_heading, covering)
+                    if entry is not None:
+                        major_heading = entry.title
+                    elif not contents and line.max_font_size is not None and (
+                        line.max_font_size >= 13
+                    ):
+                        major_heading = current_heading
+                    elif contents and not covering and (major_heading is None or wrapped):
                         major_heading = current_heading
                     continue
+                previous_heading = None
                 content.append(line)
 
             if content:
@@ -104,13 +165,78 @@ class PolicyParser:
                     document_id,
                     page,
                     current_heading,
-                    major_heading,
+                    major_heading or current_heading,
                     content,
                     local_index,
                 )
                 records.extend(page_records)
 
         return records
+
+    @classmethod
+    def _parse_contents(cls, pages: list[ExtractedPage]) -> list[_ContentsEntry]:
+        """Read top-level policy sections and their printed pages from CONTENTS."""
+
+        for page in pages:
+            lines = sorted(page.lines, key=lambda item: item.bounding_box.top)
+            if not any(line.text.strip().upper() == "CONTENTS" for line in lines):
+                continue
+            entries: list[_ContentsEntry] = []
+            for line in lines:
+                text = cls._clean_text(line.text)
+                if text.upper() == "UNDER-GRADUATE PROGRAMMES":
+                    break
+                if text.startswith("•") and entries:
+                    last = entries[-1]
+                    alias = text.lstrip("• ").strip()
+                    entries[-1] = _ContentsEntry(
+                        last.title, last.start, last.end, (*last.aliases, alias)
+                    )
+                    continue
+                match = _CONTENTS_ENTRY_RE.match(text)
+                if match is None:
+                    continue
+                title = _TABLE_LABEL_RE.sub(" ", match.group("title")).strip()
+                start = int(match.group("start"))
+                end = int(match.group("end") or start)
+                entries.append(_ContentsEntry(title, start, end, (title,)))
+            return entries
+        return []
+
+    @classmethod
+    def _match_contents(
+        cls,
+        heading: str,
+        entries: list[_ContentsEntry],
+    ) -> _ContentsEntry | None:
+        heading_words = cls._match_words(heading)
+        if not heading_words:
+            return None
+        best: tuple[float, _ContentsEntry] | None = None
+        for entry in entries:
+            for alias in entry.aliases:
+                alias_words = cls._match_words(alias)
+                if not alias_words:
+                    continue
+                overlap = len(heading_words & alias_words) / min(
+                    len(heading_words), len(alias_words)
+                )
+                if overlap >= 0.75 and (best is None or overlap > best[0]):
+                    best = (overlap, entry)
+        return best[1] if best else None
+
+    @staticmethod
+    def _match_words(text: str) -> set[str]:
+        words = re.findall(r"[a-z]+", text.lower())
+        # Compare five-letter stems so spelling variants in the guide still
+        # match (e.g. "DEBATOR" in a heading vs "Debater" in the contents).
+        return {word[:5] for word in words if len(word) > 1 and word not in _MATCH_STOPWORDS}
+
+    @staticmethod
+    def _printed_number(printed_page: str | None) -> int | None:
+        if printed_page and printed_page.isdigit():
+            return int(printed_page)
+        return None
 
     def _section_records(
         self,
@@ -446,12 +572,22 @@ class PolicyParser:
         )
 
     @staticmethod
-    def _is_heading(line: ExtractedTextLine) -> bool:
+    def _is_heading(line: ExtractedTextLine, *, allow_small: bool = False) -> bool:
         text = line.text.strip()
         if len(text) > 140 or re.match(r"^(?:\d+\.|[•\-])\s", text):
             return False
         if line.max_font_size is not None and line.max_font_size >= 13:
             return True
+        # Real guide headings are bold; unbolded lines ending in ":" or set in
+        # capitals are sentence fragments, form text or addresses.
+        if not any("bold" in font.lower() for font in line.font_names):
+            return False
+        if re.match(r"^Note\b", text, re.IGNORECASE):
+            return False
+        # Small bold text is usually a table header; accept it only as the
+        # continuation of a heading directly above it.
+        if not allow_small and line.max_font_size is not None and line.max_font_size < 11:
+            return False
         letters = [character for character in text if character.isalpha()]
         is_upper = bool(letters) and all(character.isupper() for character in letters)
         return (is_upper and len(text) >= 5) or (

@@ -28,6 +28,10 @@ class CourseParserTests(unittest.TestCase):
         cls.noncontiguous = CourseParser().parse(
             extractor.extract_pages([54, 80])
         )
+        cls.medical_postgraduate = CourseParser().parse(
+            extractor.extract_pages([92, 93]),
+            initial_faculty="Faculty of Medicine",
+        )
 
     def test_standard_course_card(self) -> None:
         agriculture = self.undergraduate.courses[0]
@@ -127,6 +131,39 @@ class CourseParserTests(unittest.TestCase):
 
         self.assertNotIn("Centre of Professional Courses", field_text)
         self.assertNotIn("Self Finance Mode", field_text)
+
+    def test_plural_courses_of_study_headings_are_parsed(self) -> None:
+        names = [course.course_name for course in self.medical_postgraduate.courses]
+
+        self.assertEqual(
+            names,
+            [
+                "Doctor of Medicine (M.D.)",
+                "Master of Surgery (M.S.)",
+                "Magister Chirurgiae (M.Ch.)",
+                "Doctor of Medicine (D.M.)",
+                "P.G. Diploma",
+                "Post Doctoral Certificate Course (PDCC)",
+                "Master of Public Health ( Under Self Financing Scheme )",
+                "Master of Dental Surgery (M.D.S.)",
+                "Master of Medical Laboratory Science ( Under Self Financing Scheme )",
+            ],
+        )
+
+    def test_discipline_and_course_of_study_columns_are_kept_separate(self) -> None:
+        courses = {course.course_name: course for course in self.medical_postgraduate.courses}
+        md_rows = courses["Doctor of Medicine (M.D.)"].tables[0].rows
+        pdcc = courses["Post Doctoral Certificate Course (PDCC)"]
+        public_health = courses["Master of Public Health ( Under Self Financing Scheme )"]
+
+        self.assertEqual(len(md_rows), 16)
+        self.assertEqual(md_rows[0]["duration"].text, "3 Years")
+        self.assertEqual(md_rows[0]["discipline"].text, "Anatomy")
+        self.assertTrue(md_rows[-1]["duration"].inherited)
+        self.assertEqual(pdcc.tables[0].rows[0]["specialization"].text, "Critical Care Medicine")
+        self.assertIn("NATIONAL MEDICAL COMMISSION", pdcc.fields[-1].value)
+        # The PDCC remarks must not leak into the following course card.
+        self.assertNotIn("remarks", {field.name for field in public_health.fields})
 
     def test_nonconsecutive_pages_are_not_merged(self) -> None:
         community_science = next(

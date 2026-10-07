@@ -383,3 +383,27 @@
 - After `down`/`up`, the database persisted and ingestion skipped unchanged inputs
 - 102 tests pass, including 5 PostgreSQL integration tests run against a disposable `amu_test` database
 
+## Phase 12: Parser Coverage and Section Accuracy
+
+**Status:** Complete
+**Date:** 2026-10-08
+
+### Changes
+
+- Renamed the source PDF to `guide_to_admission_2026_27.pdf`; the content and SHA-256 are unchanged
+- The course parser now recognises the plural "Courses of Study" heading, recovering 10 medical and Unani postgraduate course blocks on pages 92, 93 and 106: M.D., M.S., M.Ch., D.M., PDCC, M.D.S., two P.G. Diplomas, Unani Mahire Tib and Unani Mahire Jarahat
+- Added "Discipline" and "Course of Study" table headers, so specialty names are no longer merged into the duration column (also fixes Allied & Healthcare and Medical Laboratory Science tables)
+- The PDCC remarks, including the NMC non-approval note, no longer leak into the Master of Public Health record
+- Policy sections now follow the guide's CONTENTS page instead of the last large heading, so later chunks are no longer filed under "Special Categories for Nomination/Reservation"
+- Policy headings must be bold; unbolded sentence fragments, "Note" lines and table labels are no longer headings, and wrapped headings are joined
+- Pages outside the contents (forms, disclaimer) take their own heading as their section
+- Added query aliases for M.D., M.S., M.Ch., D.M., M.D.S. and PDCC; `MS` and `DM` use word-like matching
+
+### Validation
+
+- 189 course records (was 179) and 114 policy chunks (was 154, fewer fragment splits); appendix rows unchanged at 1,390
+- Every abbreviation in the 179 distinct course names is recognised
+- The 15 approved course chunks are byte-identical, and both retrieval evaluations are byte-identical to the baseline
+- 110 tests pass
+- Known remainder: the page-37 course-type key sits under "Refund of fee" because the contents page does not list it
+

@@ -316,3 +316,7 @@
 - The first approved live request exposed Groq/Cloudflare error 1010 for Python's default HTTP fingerprint; the client now sends an explicit application user agent and JSON accept header
 - The approved live end-to-end request succeeded with `openai/gpt-oss-20b`, retrieved the MCA course chunk, compared 12 stated Mathematics credits against the 16-credit requirement and cited printed page B.25
 - MCA is an acceptance-test example, not a special-case workflow; the same pipeline handles every course admitted to the approved guide index
+- Added a reproducible eight-query live evaluation spanning seven direct-course intents and one course-discovery question
+- Saved original queries, expanded queries, exact retrieved contexts, model answers and source pages in `docs/PHASE9_LIVE_EVALUATION.md`
+- Direct-course retrieval selected the intended course in 7/7 cases; course discovery ranked MCA first but returned two irrelevant lower-ranked candidates
+- Seven of eight answers included inline source markers; the citation miss and merged-cell M.Tech intake representation are recorded for refinement

@@ -39,7 +39,8 @@ services:
     restart: "no"
 
   app:
-    build: .
+    # The ingest service builds the shared image once. Declaring a second
+    # identical build here can race while exporting the same image tag.
     image: amu-admissions-rag:latest
     restart: unless-stopped
     environment:

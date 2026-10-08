@@ -382,4 +382,5 @@
 - The containerized app passed its health check and answered the MCA credit question from the database with a page B.25 citation
 - After `down`/`up`, the database persisted and ingestion skipped unchanged inputs
 - 102 tests pass, including 5 PostgreSQL integration tests run against a disposable `amu_test` database
+- Follow-up: the shared application image is now built only by `ingest`, preventing concurrent `app`/`ingest` exports from racing on Docker Compose while both services continue using the same image
 

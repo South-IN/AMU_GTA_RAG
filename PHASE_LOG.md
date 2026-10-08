@@ -410,3 +410,9 @@
 - Live retrieval finds content outside the original sample, including counselling policy and school admission schedules
 - The containerized Streamlit app remains healthy at `http://127.0.0.1:8501`
 
+### Follow-up: Citation Marker Compatibility
+
+- Accepted both ASCII `[SOURCE N]` and model-emitted Unicode `【SOURCE N】` markers
+- Centralized citation parsing so validation and Streamlit link rendering cannot drift
+- Added regression coverage for Unicode marker validation, invalid-source detection and clickable link rendering
+

@@ -6,6 +6,7 @@ import os
 import re
 from dataclasses import dataclass
 
+from amu_admissions_rag.citations import SOURCE_PATTERN, source_number
 from amu_admissions_rag.config import AppPaths
 from amu_admissions_rag.corpus import load_approved_corpora
 from amu_admissions_rag.generation import GroqAnswerGenerator, load_env_file
@@ -17,7 +18,6 @@ from amu_admissions_rag.models import (
 from amu_admissions_rag.retrieval import HybridRetriever, format_llm_context
 
 
-SOURCE_PATTERN = re.compile(r"\[SOURCE\s+(\d+)\]", re.IGNORECASE)
 DISCOVERY_PATTERN = re.compile(
     r"\b(?:which|what)\s+(?:postgraduate\s+|undergraduate\s+)?courses?\b"
     r"|\bcourses?\s+(?:can|could|should|may)\s+i\b"
@@ -49,7 +49,7 @@ def cited_source_numbers(answer: str, source_count: int) -> tuple[list[int], lis
     """Return unique valid and invalid source numbers used by an answer."""
 
     referenced = list(
-        dict.fromkeys(int(match.group(1)) for match in SOURCE_PATTERN.finditer(answer))
+        dict.fromkeys(source_number(match) for match in SOURCE_PATTERN.finditer(answer))
     )
     valid = [number for number in referenced if 1 <= number <= source_count]
     invalid = [number for number in referenced if number not in valid]

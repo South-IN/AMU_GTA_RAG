@@ -4,8 +4,7 @@ from __future__ import annotations
 
 import re
 
-
-SOURCE_PATTERN = re.compile(r"\[SOURCE\s+(\d+)\]", re.IGNORECASE)
+from amu_admissions_rag.citations import SOURCE_PATTERN, source_number
 
 
 def link_answer_citations(answer: str, valid_source_numbers: list[int]) -> str:
@@ -14,7 +13,7 @@ def link_answer_citations(answer: str, valid_source_numbers: list[int]) -> str:
     valid = set(valid_source_numbers)
 
     def replace(match: re.Match[str]) -> str:
-        number = int(match.group(1))
+        number = source_number(match)
         if number not in valid:
             return match.group(0)
         return f"[{number}](#source-{number})"

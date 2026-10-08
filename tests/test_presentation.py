@@ -12,6 +12,14 @@ class PresentationTests(unittest.TestCase):
         self.assertIn("[1](#source-1)", rendered)
         self.assertIn("[SOURCE 3]", rendered)
 
+    def test_unicode_citation_becomes_the_same_source_link(self) -> None:
+        rendered = link_answer_citations(
+            "Requirement 【SOURCE 1】.",
+            [1],
+        )
+
+        self.assertEqual(rendered, "Requirement [1](#source-1).")
+
     def test_context_preview_preserves_short_text(self) -> None:
         self.assertEqual(context_preview("Course: MCA\nAge: 27"), "Course: MCA Age: 27")
 

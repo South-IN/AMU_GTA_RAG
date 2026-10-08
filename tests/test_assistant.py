@@ -62,6 +62,15 @@ class AssistantTests(unittest.TestCase):
         self.assertEqual(valid, [1])
         self.assertEqual(invalid, [4])
 
+    def test_citation_parser_accepts_unicode_source_brackets(self) -> None:
+        valid, invalid = cited_source_numbers(
+            "Supported 【SOURCE 1】 and unavailable 【 SOURCE 3 】.",
+            2,
+        )
+
+        self.assertEqual(valid, [1])
+        self.assertEqual(invalid, [3])
+
     def test_discovery_routing_requires_course_suggestion_language(self) -> None:
         self.assertTrue(
             should_discover_courses(

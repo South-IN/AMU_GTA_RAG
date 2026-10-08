@@ -10,6 +10,7 @@ Human-validated retrieval pipeline for the AMU Guide to Admissions 2026-27.
 - Preserve page layout, course fields and nested tables
 - Normalize course records while retaining PDF provenance
 - Create heading-aware policy chunks and normalized appendix rows
+- Add query-relevant guide-wide policies to the primary course or appendix evidence
 - Prepare extracted content for human approval before indexing
 - Support exact facts and policy-oriented RAG queries
 

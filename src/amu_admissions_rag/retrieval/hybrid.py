@@ -14,6 +14,7 @@ from amu_admissions_rag.models import (
     CourseCorpus,
     CourseDiscoveryResponse,
     ProgramLevel,
+    QueryIntent,
     IndexCorpus,
     RetrievalHit,
     RetrievalResponse,
@@ -24,6 +25,16 @@ from amu_admissions_rag.retrieval.embedding import (
     EmbeddingProvider,
     HashingEmbeddingProvider,
 )
+
+
+COURSE_PROFILE_INTENTS = {
+    QueryIntent.ELIGIBILITY,
+    QueryIntent.AGE_LIMIT,
+    QueryIntent.SELECTION_PROCESS,
+    QueryIntent.TEST_DETAILS,
+    QueryIntent.INTAKE,
+    QueryIntent.DURATION,
+}
 
 
 class HybridRetriever:
@@ -55,6 +66,7 @@ class HybridRetriever:
         *,
         limit: int = 5,
         candidate_limit: int = 40,
+        chunk_types: set[ChunkType] | None = None,
     ) -> RetrievalResponse:
         if limit < 1 or candidate_limit < 1:
             raise ValueError("limit and candidate_limit must be positive")
@@ -72,8 +84,23 @@ class HybridRetriever:
         query_vector = self.embedding_provider.embed_texts([analysis.expanded_query])[0]
         vector_scores = self._vectors @ query_vector
 
-        lexical_order = self._rank(lexical_scores, candidate_limit, positive_only=True)
-        vector_order = self._rank(vector_scores, candidate_limit, positive_only=True)
+        allowed_indexes = [
+            index
+            for index, chunk in enumerate(self.index_corpus.chunks)
+            if chunk_types is None or chunk.chunk_type in chunk_types
+        ]
+        lexical_order = self._rank(
+            lexical_scores,
+            candidate_limit,
+            positive_only=True,
+            allowed_indexes=allowed_indexes,
+        )
+        vector_order = self._rank(
+            vector_scores,
+            candidate_limit,
+            positive_only=True,
+            allowed_indexes=allowed_indexes,
+        )
         lexical_ranks = {index: rank for rank, index in enumerate(lexical_order, start=1)}
         vector_ranks = {index: rank for rank, index in enumerate(vector_order, start=1)}
 
@@ -86,8 +113,16 @@ class HybridRetriever:
             if index in vector_ranks:
                 fused_score += 1 / (self.rrf_k + vector_ranks[index])
             chunk = self.index_corpus.chunks[index]
+            chunk_text = chunk.text.casefold()
+            named_course_profile = (
+                chunk.chunk_type is ChunkType.COURSE_OVERVIEW
+                and any(course_name in chunk_text for course_name in matched_course_names)
+            )
             intent_boost = 0.0
-            if chunk.field_name in analysis.preferred_fields:
+            if chunk.field_name in analysis.preferred_fields or (
+                named_course_profile
+                and any(intent in COURSE_PROFILE_INTENTS for intent in analysis.intents)
+            ):
                 intent_boost = 1.25 / (self.rrf_k + 1)
                 fused_score += intent_boost
             exact_value_boost = 0.0
@@ -102,7 +137,6 @@ class HybridRetriever:
                 exact_value_boost = 0.5 / (self.rrf_k + 1)
                 fused_score += exact_value_boost
             course_match_boost = 0.0
-            chunk_text = chunk.text.casefold()
             if any(
                 course_name in chunk_text
                 for course_name in matched_course_names
@@ -307,8 +341,9 @@ class HybridRetriever:
         limit: int,
         *,
         positive_only: bool,
+        allowed_indexes: Sequence[int] | None = None,
     ) -> list[int]:
-        indexes = range(len(scores))
+        indexes = allowed_indexes if allowed_indexes is not None else range(len(scores))
         ordered = sorted(indexes, key=lambda index: scores[index], reverse=True)
         if positive_only:
             ordered = [index for index in ordered if scores[index] > 0]

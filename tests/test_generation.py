@@ -51,6 +51,7 @@ class GroqGenerationTests(unittest.TestCase):
         self.assertIn("MCA requires 16 credits", payload["messages"][1]["content"])
         self.assertIn("only from the supplied", payload["messages"][0]["content"])
         self.assertIn("potential matches", payload["messages"][0]["content"])
+        self.assertIn("guide-wide admissions policies", payload["messages"][0]["content"])
 
     def test_empty_context_abstains_without_api_call(self) -> None:
         with patch("amu_admissions_rag.generation.groq.urlopen") as mocked_urlopen:

@@ -422,3 +422,28 @@
 - Documented the active full-guide record counts, approved-only database boundary and page-level provenance flow
 - Linked the diagram from the project README and stored the source asset under `docs/assets/`
 
+## Phase 13: Policy-Aware Answer Context
+
+**Status:** Complete
+**Date:** 2026-10-08
+
+### Changes
+
+- Added chunk-type filtering to hybrid retrieval
+- Added a second retrieval pass for up to two relevant approved policy sections
+- Extended intent boosting to a specifically named complete-course chunk, preventing unrelated appendix rows from outranking course eligibility, age, selection, test-detail, intake or duration evidence
+- Merged primary and policy evidence in stable order with chunk-ID deduplication
+- Labelled course, appendix and guide-wide policy evidence explicitly in the LLM context
+- Updated the Groq system prompt to apply relevant guide-wide policies together with course-specific requirements
+
+### Decisions
+
+- Reuse the existing 154 approved policy chunks rather than duplicating policies inside every course chunk
+- Keep policy retrieval query-specific instead of sending the entire policy corpus to the model
+- Preserve independent page citations for every policy and course source
+- Avoid rechunking and reindexing because the required policy chunks and vectors already exist
+
+### Validation
+
+- Unit tests cover policy-only retrieval filtering, evidence merging, deduplication and prompt instructions
+

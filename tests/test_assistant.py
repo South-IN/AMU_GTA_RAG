@@ -19,14 +19,19 @@ from amu_admissions_rag.models import (
 )
 
 
-def _hit() -> RetrievalHit:
+def _hit(
+    *,
+    chunk_id: str = "guide:1:course",
+    chunk_type: ChunkType = ChunkType.COURSE_OVERVIEW,
+    title: str = "Example Course - Complete Course Information",
+) -> RetrievalHit:
     return RetrievalHit(
         chunk=RetrievalChunk(
-            chunk_id="guide:1:course",
+            chunk_id=chunk_id,
             document_id="guide",
-            chunk_type=ChunkType.COURSE_OVERVIEW,
+            chunk_type=chunk_type,
             parent_record_id="course:1",
-            title="Example Course - Complete Course Information",
+            title=title,
             text="Course: Example\nQualifying Examination: Example requirement.",
             source=SourceReference(
                 document_id="guide",
@@ -107,6 +112,10 @@ class AssistantTests(unittest.TestCase):
             query=_analysis(query),
             candidates=[SimpleNamespace(profile=hit)],
         )
+        retriever.search.return_value = SimpleNamespace(
+            query=_analysis(query),
+            hits=[],
+        )
         generator = Mock()
         generator.model = "test-model"
         generator.generate.return_value = "You qualify for this course [SOURCE 1]."
@@ -122,6 +131,36 @@ class AssistantTests(unittest.TestCase):
         generator.repair_eligibility_claims.assert_called_once()
         self.assertTrue(reply.eligibility_repair_attempted)
         self.assertIn("potential match", reply.answer)
+
+    def test_relevant_policy_hits_are_added_and_deduplicated(self) -> None:
+        query = "Am I eligible?"
+        course_hit = _hit()
+        policy_hit = _hit(
+            chunk_id="guide:policy:1",
+            chunk_type=ChunkType.POLICY_SECTION,
+            title="Important eligibility rules",
+        )
+        retriever = Mock()
+        retriever.search.side_effect = [
+            SimpleNamespace(query=_analysis(query), hits=[course_hit]),
+            SimpleNamespace(query=_analysis(query), hits=[course_hit, policy_hit]),
+        ]
+        generator = Mock()
+        generator.model = "test-model"
+        generator.generate.return_value = "Supported [SOURCE 1] [SOURCE 2]."
+
+        reply = AdmissionsAssistant(retriever, generator).ask(query)
+
+        self.assertEqual(
+            [hit.chunk.chunk_id for hit in reply.hits],
+            [course_hit.chunk.chunk_id, policy_hit.chunk.chunk_id],
+        )
+        self.assertIn("Evidence type: Guide-wide admissions policy", reply.context)
+        self.assertEqual(retriever.search.call_args_list[1].kwargs["limit"], 2)
+        self.assertEqual(
+            retriever.search.call_args_list[1].kwargs["chunk_types"],
+            {ChunkType.POLICY_SECTION},
+        )
 
     def test_valid_citation_does_not_trigger_repair(self) -> None:
         query = "What is required?"

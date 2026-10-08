@@ -16,6 +16,8 @@ User query
 
 The model receives only the user query and retrieved chunk content with printed-page citations. Coordinates, ranking scores and internal metadata are excluded.
 
+Each answer request combines the primary course or appendix results with up to two independently retrieved policy sections. Policy retrieval is restricted to approved `policy_section` chunks, merged after the primary evidence and deduplicated by chunk ID. The context labels every source as complete course information, a guide appendix record or a guide-wide admissions policy so the model can apply relevant university rules without confusing them with course-specific requirements.
+
 ## Grounding rules
 
 - Answer only from supplied sources.

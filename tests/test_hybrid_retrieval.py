@@ -5,6 +5,7 @@ import numpy as np
 
 from amu_admissions_rag.indexing import RetrievalChunkBuilder
 from amu_admissions_rag.models import (
+    ChunkType,
     CourseCorpus,
     CourseField,
     CourseRecord,
@@ -15,6 +16,7 @@ from amu_admissions_rag.models import (
     ProgramLevel,
     ReviewMetadata,
     ReviewStatus,
+    SectionRecord,
     SourceReference,
 )
 from amu_admissions_rag.retrieval import (
@@ -130,9 +132,19 @@ class HybridRetrievalTests(unittest.TestCase):
             document=self.document,
             courses=[self.mca, self.mba, self.bsc],
         )
+        self.policy = SectionRecord(
+            record_id="policy:eligibility",
+            document_id="guide",
+            heading="General eligibility rules",
+            text="Eligibility requirements for every course must be satisfied.",
+            source=SourceReference(
+                document_id="guide", physical_page=2, printed_page="2"
+            ),
+            review=approved,
+        )
         policy_corpus = PolicyCorpus(
             document=self.document,
-            sections=[],
+            sections=[self.policy],
             appendix_rows=[],
         )
         index_corpus = RetrievalChunkBuilder().build(course_corpus, policy_corpus)
@@ -176,6 +188,7 @@ class HybridRetrievalTests(unittest.TestCase):
 
         self.assertEqual(response.hits[0].chunk.parent_record_id, self.mca.record_id)
         self.assertGreater(response.hits[0].course_match_boost, 0)
+        self.assertGreater(response.hits[0].intent_boost, 0)
 
     def test_selection_query_finds_a_different_course(self) -> None:
         response = self.retriever.search("How does MBA selection work?", limit=1)
@@ -183,6 +196,16 @@ class HybridRetrievalTests(unittest.TestCase):
         self.assertEqual(response.hits[0].chunk.parent_record_id, self.mba.record_id)
         self.assertIn("Selection Process:", response.hits[0].chunk.text)
         self.assertIn("admission test and interview", response.hits[0].chunk.text)
+
+    def test_search_can_be_restricted_to_policy_chunks(self) -> None:
+        response = self.retriever.search(
+            "What are the eligibility rules?",
+            limit=2,
+            chunk_types={ChunkType.POLICY_SECTION},
+        )
+
+        self.assertEqual(len(response.hits), 1)
+        self.assertIs(response.hits[0].chunk.chunk_type, ChunkType.POLICY_SECTION)
 
     def test_course_chunk_retains_all_similar_table_rows(self) -> None:
         response = self.retriever.search(

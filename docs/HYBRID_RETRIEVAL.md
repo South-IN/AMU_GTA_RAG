@@ -29,6 +29,15 @@ Course chunks list every contributing printed and physical page. Retrieval can r
 
 The hashing provider validates vector storage, cosine ranking, fusion and parent hydration. It is not a learned semantic model and is not the production quality benchmark. A hosted embedding API can replace it by implementing `embed_texts`; no BM25, RRF or response-model code needs to change.
 
+## Policy-aware context assembly
+
+Answer generation performs two retrieval passes over the same approved index:
+
+1. Primary hybrid retrieval selects course, appendix or policy evidence for the question.
+2. A filtered hybrid pass selects up to two additional `policy_section` chunks using the same expanded query.
+
+The results are merged in primary-first order and deduplicated before citation numbering. This uses the existing policy chunks and embeddings; it does not require rechunking or reindexing.
+
 ## Commands
 
 ```powershell

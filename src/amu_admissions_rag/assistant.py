@@ -12,6 +12,7 @@ from amu_admissions_rag.corpus import load_approved_corpora
 from amu_admissions_rag.generation import GroqAnswerGenerator, load_env_file
 from amu_admissions_rag.models import (
     AnswerCitation,
+    ChunkType,
     QueryAnalysis,
     RetrievalHit,
 )
@@ -90,7 +91,10 @@ class AdmissionsAssistant:
         *,
         limit: int | None = None,
         discover_courses: bool | None = None,
+        policy_limit: int = 2,
     ) -> AssistantReply:
+        if policy_limit < 0:
+            raise ValueError("policy_limit cannot be negative")
         discovery = should_discover_courses(query) if discover_courses is None else discover_courses
         effective_limit = limit or (3 if discovery else 1)
         if discovery:
@@ -101,6 +105,14 @@ class AdmissionsAssistant:
             response = self.retriever.search(query, limit=effective_limit)
             hits = response.hits
             mode = "hybrid_retrieval"
+
+        if policy_limit:
+            policy_response = self.retriever.search(
+                query,
+                limit=policy_limit,
+                chunk_types={ChunkType.POLICY_SECTION},
+            )
+            hits = self._deduplicate_hits([*hits, *policy_response.hits])
 
         context = format_llm_context(hits)
         answer = self.generator.generate(query, context)
@@ -145,3 +157,13 @@ class AdmissionsAssistant:
             eligibility_repair_attempted=eligibility_repair_attempted,
             citation_warning=warning,
         )
+
+    @staticmethod
+    def _deduplicate_hits(hits: list[RetrievalHit]) -> list[RetrievalHit]:
+        unique: list[RetrievalHit] = []
+        seen: set[str] = set()
+        for hit in hits:
+            if hit.chunk.chunk_id not in seen:
+                unique.append(hit)
+                seen.add(hit.chunk.chunk_id)
+        return unique

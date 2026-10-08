@@ -102,3 +102,9 @@ The Streamlit UI provides linked in-text citations, page-labelled source cards, 
 
 See [PROJECT_PLAN.md](PROJECT_PLAN.md) for the full architecture and
 [PHASE_LOG.md](PHASE_LOG.md) for implementation history.
+
+## License
+
+The source code is released under the [MIT License](LICENSE).
+
+The license does not cover the AMU Guide to Admissions 2026-27 (`c7cabd0dcdcb3d7793446b0ea7c88a49.pdf`) or the content extracted from it in `corpus/` and `data/`. That material belongs to Aligarh Muslim University and is included only to make the retrieval pipeline reproducible.

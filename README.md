@@ -2,6 +2,8 @@
 
 Human-validated retrieval pipeline for the AMU Guide to Admissions 2026-27.
 
+![AMU Admissions RAG technical architecture](docs/assets/amu-admissions-rag-technical-architecture.png)
+
 ## Current scope
 
 - Search the complete 187-page Guide to Admissions corpus: 179 courses, 154 policy sections and 1,390 appendix rows

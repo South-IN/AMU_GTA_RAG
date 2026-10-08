@@ -416,3 +416,9 @@
 - Centralized citation parsing so validation and Streamlit link rendering cannot drift
 - Added regression coverage for Unicode marker validation, invalid-source detection and clickable link rendering
 
+### Follow-up: Technical Architecture Diagram
+
+- Added a presentation-ready technical diagram covering offline ingestion and governance, online hybrid retrieval, grounded generation, citation safety and the Streamlit interface
+- Documented the active full-guide record counts, approved-only database boundary and page-level provenance flow
+- Linked the diagram from the project README and stored the source asset under `docs/assets/`
+

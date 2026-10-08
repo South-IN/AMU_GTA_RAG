@@ -109,7 +109,7 @@ amu-load-index --apply-schema \
 
 In normal operation the Docker `ingest` service runs all of these steps with `amu-pipeline`; see [DOCKER.md](DOCKER.md).
 
-The current reviewed 15-course batch produces 15 approved course chunks. The full preview contains 1,723 chunks: 179 complete course chunks plus policy and appendix chunks. Policy and appendix records remain pending and are excluded from the approved index until reviewed.
+The project-owner full-guide review batch produces 1,723 approved chunks: 179 complete course chunks, 154 policy-section chunks and 1,390 appendix-row chunks. The earlier 15-course batch remains in the repository as the initial focused validation checkpoint.
 
 ## Deferred Decisions
 

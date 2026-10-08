@@ -4,6 +4,7 @@ Human-validated retrieval pipeline for the AMU Guide to Admissions 2026-27.
 
 ## Current scope
 
+- Search the complete 187-page Guide to Admissions corpus: 179 courses, 154 policy sections and 1,390 appendix rows
 - Preserve page layout, course fields and nested tables
 - Normalize course records while retaining PDF provenance
 - Create heading-aware policy chunks and normalized appendix rows
@@ -28,6 +29,8 @@ Open <http://127.0.0.1:8501>. Compose starts three containers:
 ## Human review
 
 Extracted records start as `pending`. Approvals are applied from auditable review batches in `reviews/`, never by editing corpus JSON. Only approved records are indexed, and the database rejects any retrieval chunk that is not approved. To publish new approvals, add a batch file and run `docker compose up -d --build`.
+
+The project-owner approval batch in `reviews/2026-10-08-full-guide.json` activates every parsed record in the full guide. The earlier 15-course batch remains as the initial focused validation checkpoint and audit history.
 
 A single batch can also be applied manually:
 

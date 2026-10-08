@@ -2,7 +2,7 @@
 
 Phase 9 connects approved retrieval chunks to Groq using `openai/gpt-oss-20b`.
 
-The assistant is guide-wide and course-agnostic. MCA is used in examples only; there are no MCA-specific retrieval or generation rules. The 15 approved courses are the current human-validation checkpoint, not the product boundary. As the remaining reviewed course, policy and appendix records are approved, rebuilding the same index expands coverage without changing the answer pipeline.
+The assistant is guide-wide and course-agnostic. MCA is used in examples only; there are no MCA-specific retrieval or generation rules. The approved corpus covers all parsed course, policy and appendix records in the Guide to Admissions.
 
 ## Flow
 

@@ -20,7 +20,7 @@ python -m streamlit run streamlit_app.py
 - Answers use clickable numeric citations that jump to their source cards.
 - Source cards show the course or section title, printed guide page, a preview and the complete retrieved context.
 - The official guide can be downloaded from the sidebar.
-- The sidebar states the current 15-course human-validation boundary.
+- The sidebar states the active full-guide coverage: 179 courses, 154 policy sections and 1,390 appendix rows.
 
 ## Citation and eligibility safety
 

@@ -59,6 +59,15 @@ class HybridRetriever:
         if limit < 1 or candidate_limit < 1:
             raise ValueError("limit and candidate_limit must be positive")
         analysis = self.query_processor.analyze(query)
+        expanded_query = analysis.expanded_query.casefold()
+        matched_course_names = {
+            match.full_name.casefold() for match in analysis.aliases
+        }
+        matched_course_names.update(
+            course.course_name.casefold()
+            for course in self.course_parents.values()
+            if course.course_name.casefold() in expanded_query
+        )
         lexical_scores = self._bm25.scores(analysis.expanded_query)
         query_vector = self.embedding_provider.embed_texts([analysis.expanded_query])[0]
         vector_scores = self._vectors @ query_vector
@@ -95,8 +104,8 @@ class HybridRetriever:
             course_match_boost = 0.0
             chunk_text = chunk.text.casefold()
             if any(
-                f"expanded course name: {match.full_name}".casefold() in chunk_text
-                for match in analysis.aliases
+                course_name in chunk_text
+                for course_name in matched_course_names
             ):
                 course_match_boost = 1.5 / (self.rrf_k + 1)
                 fused_score += course_match_boost

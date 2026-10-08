@@ -384,3 +384,29 @@
 - 102 tests pass, including 5 PostgreSQL integration tests run against a disposable `amu_test` database
 - Follow-up: the shared application image is now built only by `ingest`, preventing concurrent `app`/`ingest` exports from racing on Docker Compose while both services continue using the same image
 
+## Phase 12: Full Guide Corpus Activation
+
+**Status:** Complete
+**Date:** 2026-10-08
+
+### Changes
+
+- Added an auditable project-owner review batch covering every parsed record in the 187-page guide
+- Activated 179 course records, 154 policy sections and 1,390 appendix rows
+- Rebuilt and loaded 1,723 approved complete-information chunks into PostgreSQL
+- Updated the Streamlit coverage notice and project documentation for full-guide operation
+- Extended named-course ranking so both abbreviations and full course names boost the matching course evidence
+
+### Decisions
+
+- Treat all parsed records as reviewed following explicit project-owner direction
+- Retain the original 15-course review batch as a focused validation checkpoint and audit artifact
+- Keep the same approval gate, complete-course chunking, hybrid retrieval and grounded generation architecture
+
+### Validation
+
+- The full-guide review batch contains 1,723 unique decisions with no missing or unknown record IDs
+- PostgreSQL contains 179 courses, 154 policy sections, 1,390 appendix rows and 1,723 approved chunks
+- Live retrieval finds content outside the original sample, including counselling policy and school admission schedules
+- The containerized Streamlit app remains healthy at `http://127.0.0.1:8501`
+

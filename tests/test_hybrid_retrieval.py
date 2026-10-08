@@ -168,6 +168,15 @@ class HybridRetrievalTests(unittest.TestCase):
         self.assertEqual(len(parent.fields), 2)
         self.assertEqual(response.hits[0].chunk.source.printed_page, "A.40")
 
+    def test_full_course_name_receives_same_course_match_boost_as_alias(self) -> None:
+        response = self.retriever.search(
+            "What is the eligibility for Master of Computer Science and Applications (MCA)?",
+            limit=1,
+        )
+
+        self.assertEqual(response.hits[0].chunk.parent_record_id, self.mca.record_id)
+        self.assertGreater(response.hits[0].course_match_boost, 0)
+
     def test_selection_query_finds_a_different_course(self) -> None:
         response = self.retriever.search("How does MBA selection work?", limit=1)
 

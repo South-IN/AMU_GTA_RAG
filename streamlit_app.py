@@ -132,7 +132,7 @@ with st.sidebar:
     st.caption("Guide to Admissions 2026–27")
     st.markdown(
         '<div class="coverage-note"><strong>Validated coverage</strong><br>'
-        "15 reviewed courses are currently searchable. The interface expands automatically as more records are approved.</div>",
+        "Full guide enabled: 179 courses, 154 policy sections and 1,390 appendix rows are searchable.</div>",
         unsafe_allow_html=True,
     )
     st.markdown("---")

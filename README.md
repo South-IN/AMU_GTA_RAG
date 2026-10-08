@@ -1,5 +1,8 @@
 # AMU Admissions RAG
 
+The versioned full-guide corpus is available in [`corpus/`](corpus/README.md),
+including a metadata-light human-review export and the approved retrieval chunks.
+
 Human-validated retrieval pipeline for the AMU Guide to Admissions 2026-27.
 
 ![AMU Admissions RAG technical architecture](docs/assets/amu-admissions-rag-technical-architecture.png)

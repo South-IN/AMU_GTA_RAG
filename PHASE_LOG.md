@@ -447,3 +447,10 @@
 
 - Unit tests cover policy-only retrieval filtering, evidence merging, deduplication and prompt instructions
 
+### Follow-up: Full Corpus Publication and Stress-Test Record
+
+- Rebuilt the local artifacts from all 187 PDF pages and both human-review batches
+- Published 179 reviewed courses, 154 reviewed policy sections, 1,390 reviewed appendix rows and 1,723 approved retrieval chunks under `corpus/`
+- Added a metadata-light 179-course export without extraction geometry for human inspection
+- Documented the completed complex-query stress tests and the remaining refinement targets
+
